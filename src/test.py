@@ -3,6 +3,8 @@ import matplotlib
 matplotlib.use('TkAgg') # need this for unknown reason on macosX
 import matplotlib.pyplot as plt
 import pymc3 as pm
+import pandas as pd
+import os
 
 # initialize random number generator
 np.random.seed(123)
@@ -40,13 +42,3 @@ with basic_model:
 
 pm.traceplot(trace)
 plt.show()
-# plot
-#fig, axes = plt.subplots(1, 2, sharex=True, figsize=(10,4))
-
-#axes[0].scatter(X1, Y)
-#axes[1].scatter(X2, Y)
-#axes[0].set_ylabel('Y')
-#axes[0].set_xlabel('X1')
-#axes[1].set_xlabel('X2')
-
-#plt.show()

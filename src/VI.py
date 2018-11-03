@@ -72,6 +72,22 @@ neural_network = construct_nn(ann_input, ann_output)
 from pymc3.theanof import set_tt_rng, MRG_RandomStreams
 set_tt_rng(MRG_RandomStreams(42))
 
+# ADVI
 with neural_network:
     inference = pm.ADVI()
     approx = pm.fit(n=30000, method=inference)
+    vi_trace = approx.sample(draws=5000)
+
+# NUTS
+with neural_network:
+    step = pm.NUTS()
+    nuts_trace = pm.sample(5000, step)
+
+pm.traceplot(vi_trace)
+pm.traceplot(nuts_trace)
+
+#plt.plot(-inference.hist, label='new ADVI', alpha=.3)
+#plt.legend()
+#plt.ylabel('ELBO')
+#plt.xlabel('iteration')
+plt.show()

@@ -112,3 +112,8 @@ venv.bak/
 
 # Mac Related
 *.DS_Store
+
+# etc
+*.png
+*.jpeg
+*.jpg

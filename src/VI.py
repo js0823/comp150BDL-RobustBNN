@@ -79,15 +79,15 @@ with neural_network:
     vi_trace = approx.sample(draws=5000)
 
 # NUTS
-with neural_network:
-    step = pm.NUTS()
-    nuts_trace = pm.sample(5000, step)
+#with neural_network:
+#    step = pm.NUTS()
+#    nuts_trace = pm.sample(5000, step)
 
 pm.traceplot(vi_trace)
-pm.traceplot(nuts_trace)
+#pm.traceplot(nuts_trace)
 
-#plt.plot(-inference.hist, label='new ADVI', alpha=.3)
-#plt.legend()
-#plt.ylabel('ELBO')
-#plt.xlabel('iteration')
+plt.plot(-inference.hist, label='new ADVI', alpha=.3)
+plt.legend()
+plt.ylabel('ELBO')
+plt.xlabel('iteration')
 plt.show()

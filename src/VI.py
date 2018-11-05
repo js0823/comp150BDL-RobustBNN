@@ -4,6 +4,10 @@ import pymc3 as pm
 import theano.tensor as T
 import sklearn
 import numpy as np
+import platform
+if platform.system() == 'Darwin':
+    import matplotlib
+    matplotlib.use('TkAgg') # need this for unknown reason on macosX
 import matplotlib.pyplot as plt
 import seaborn as sns
 from warnings import filterwarnings
@@ -11,8 +15,12 @@ filterwarnings('ignore')
 sns.set_style('white')
 from sklearn import datasets
 from sklearn.preprocessing import scale
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_moons
+
+print(sklearn.__version__)
+print(theano.__version__)
+print(pm.__version__)
 
 X, Y = make_moons(noise=0.2, random_state=0, n_samples=1000)
 X = scale(X)
@@ -73,17 +81,17 @@ from pymc3.theanof import set_tt_rng, MRG_RandomStreams
 set_tt_rng(MRG_RandomStreams(42))
 
 # ADVI
-with neural_network:
-    inference = pm.ADVI()
-    approx = pm.fit(n=30000, method=inference)
-    vi_trace = approx.sample(draws=5000)
+#with neural_network:
+#    inference = pm.ADVI()
+#    approx = pm.fit(n=30000, method=inference)
+#    vi_trace = approx.sample(draws=5000)
 
 # NUTS
-#with neural_network:
-#    step = pm.NUTS()
-#    nuts_trace = pm.sample(5000, step)
+with neural_network:
+    #step = pm.NUTS()
+    nuts_trace = pm.sample(5000)
 
-pm.traceplot(vi_trace)
+#pm.traceplot(vi_trace)
 #pm.traceplot(nuts_trace)
 
 plt.plot(-inference.hist, label='new ADVI', alpha=.3)

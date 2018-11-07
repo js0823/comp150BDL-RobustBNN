@@ -111,14 +111,21 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         bnn_kwargs = {}
     
     if sample_kwargs is None:
-        sample_kwargs = {'chains': 1}
+        #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'}
+        sample_kwargs = {'draws': 500, 'init': 'advi+adapt_diag'}
     
-    ann_input = theano.shared(X_train)
-    ann_output = theano.shared(Y_train)
+    ann_input = theano.shared(X_train.astype(floatX))
+    ann_output = theano.shared(Y_train.astype(floatX))
+
     model = bnn_func(ann_input, ann_output, **bnn_kwargs)
 
     with model:
+        # pm.sample = Default draw is 500
         trace = pm.sample(**sample_kwargs)
+        
+        #start = pm.find_MAP()
+        #step = pm.NUTS(scaling=start)
+        #trace = pm.sample(500, step, start=start, progressbar=True)
 
         ppc_train = pm.sample_ppc(trace, samples=500, progressbar=False)
         pred_train = mode(ppc_train['out'], axis=0).mode[0, :]

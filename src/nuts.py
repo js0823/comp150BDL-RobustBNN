@@ -1,4 +1,5 @@
 import theano
+floatX = theano.config.floatX
 import pymc3 as pm
 import sklearn
 import numpy as np
@@ -17,14 +18,13 @@ from scipy.stats import mode
 import sys, os
 import theano.tensor as T
 
-
-def construct_nn(ann_input, ann_output):
-    n_hidden = 50
+def construct_bnn(ann_input, ann_output):
+    n_hidden = 5
     
     # Initialize random weights between each layer
-    init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(theano.config.floatX)
-    init_2 = np.random.randn(n_hidden, n_hidden).astype(theano.config.floatX)
-    init_out = np.random.randn(n_hidden,10).astype(theano.config.floatX)
+    init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
+    init_2 = np.random.randn(n_hidden, n_hidden).astype(floatX)
+    init_out = np.random.randn(n_hidden,10).astype(floatX)
         
     with pm.Model() as neural_network:
         # Weights from input to hidden layer
@@ -110,64 +110,36 @@ def load_dataset():
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 if __name__ == "__main__":
-	print("Loading data...")
-	X_train, Y_train, X_val, Y_val, X_test, y_test = load_dataset()
+    print("Loading data...")
+    X_train, Y_train, X_val, Y_val, X_test, y_test = load_dataset()
 
-	X_train = np.asarray([entry.flatten() for entry in X_train])
-	X_val = np.asarray([entry.flatten() for entry in X_val])
-	X_test = np.asarray([entry.flatten() for entry in X_test])
-	# Building a theano.shared variable with a subset of the data to make construction of the model faster.
+    X_train = np.asarray([entry.flatten() for entry in X_train])
+    X_val = np.asarray([entry.flatten() for entry in X_val])
+    X_test = np.asarray([entry.flatten() for entry in X_test])
+    # Building a theano.shared variable with a subset of the data to make construction of the model faster.
 	# We will later switch that out, this is just a placeholder to get the dimensionality right.
-	ann_input = theano.shared(X_train.astype(np.float64))
-	ann_output = theano.shared(Y_train.astype(np.float64))
+    ann_input = theano.shared(X_train.astype(np.float64))
+    ann_output = theano.shared(Y_train.astype(np.float64))
+    neural_network = construct_bnn(ann_input, ann_output)
+    #minibatch_x = pm.Minibatch(X_train.astype(np.float64), batch_size=500)
+    #minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
 
-	neural_network = construct_nn(ann_input, ann_output)
-	minibatch_x = pm.Minibatch(X_train.astype(np.float64), batch_size=500)
-	minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
+    with neural_network:
+        step = pm.NUTS()
+        #sds, elbo = pm.ADVI(n=50000)
+        #step = pm.NUTS(scaling=np.power(neural_network.dict_to_array(sds), 2))
+        trace = pm.sample(500, step=step)
+    
+    ann_input.set_value(X_test)
+    ann_output.set_value(y_test)
 
-
-	# from pymc3.theanof import set_tt_rng, MRG_RandomStreams
-	# set_tt_rng(MRG_RandomStreams(42))
-
-	with neural_network:
-	     inference = pm.ADVI()
-	     approx = pm.fit(n=50000, method=inference, more_replacements={ann_input:minibatch_x, ann_output:minibatch_y})
-
-	# neural_network_minibatch = construct_nn(minibatch_x, minibatch_y)
-	# with neural_network_minibatch:
-	#     inference = pm.ADVI()
-	#     approx = pm.fit(40000, method=inference)
-	trace = approx.sample(draws=500)
-
-	plt.plot(-inference.hist)
-	plt.ylabel('ELBO')
-	plt.xlabel('iteration')
-	plt.show()
-
-	# # create symbolic input
-	# x = T.matrix('X')
-	# # symbolic number of samples is supported, we build vectorized posterior on the fly
-	# n = T.iscalar('n')
-	# # Do not forget test_values or set theano.config.compute_test_value = 'off'
-	# x.tag.test_value = np.empty_like(X_train[:10])
-	# n.tag.test_value = 100
-	# _sample_proba = approx.sample_node(neural_network_minibatch.out.distribution.p,
-	#                                    size=n,
-	#                                    more_replacements={ann_input: x})
-	# # It is time to compile the function
-	# # No updates are needed for Approximation random generator
-	# # Efficient vectorized form of sampling is used
-	# sample_proba = theano.function([x, n], _sample_proba)
-
-	#set shared var to test data
-	ann_input.set_value(X_test)
-	ann_output.set_value(y_test)
-
-	with neural_network:
-		ppc = pm.sample_ppc(trace, samples=100)
-	y_pred = mode(ppc['out'], axis=0).mode[0, :]
-
-	print('Accuracy on test data = {}%'.format(accuracy_score(y_test, y_pred) * 100))
-
-	# pm.traceplot(trace);
-	# plt.show()
+    with neural_network:
+        ppc = pm.sample_ppc(trace, samples=100)
+    
+    y_pred = mode(ppc['out'], axis=0).mode[0, :]
+    
+    print('Accuracy on test data = {}%'.format(accuracy_score(y_test, y_pred) * 100))
+    #plt.plot(-step.hist)
+    #plt.ylabel('ELBO')
+    #plt.xlabel('iteration')
+    #plt.show()

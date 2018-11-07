@@ -125,10 +125,7 @@ if __name__ == "__main__":
     #minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
 
     with neural_network:
-        step = pm.NUTS()
-        #sds, elbo = pm.ADVI(n=50000)
-        #step = pm.NUTS(scaling=np.power(neural_network.dict_to_array(sds), 2))
-        trace = pm.sample(500, step=step)
+        trace = pm.sample()
     
     ann_input.set_value(X_test)
     ann_output.set_value(y_test)

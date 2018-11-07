@@ -50,11 +50,8 @@ def construct_bnn(ann_input, ann_output):
         act_out = T.nnet.softmax(pm.math.dot(act_2, 
                                               weights_2_out))
 
-        out = pm.Categorical('out', 
-                           act_out,
-                           observed=ann_output,
-                           total_size=Y_train.shape[0] # IMPORTANT for minibatches
-                          )
+        out = pm.Categorical('out', act_out,observed=ann_output)
+
     return neural_network
 
 def load_dataset():
@@ -109,21 +106,49 @@ def load_dataset():
     # (It doesn't matter how we do this as long as we can read them again.)
     return X_train, y_train, X_val, y_val, X_test, y_test
 
+def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None, sample_kwargs=None):
+    if bnn_kwargs is None:
+        bnn_kwargs = {}
+    
+    if sample_kwargs is None:
+        sample_kwargs = {'chains': 1}
+    
+    ann_input = theano.shared(X_train)
+    ann_output = theano.shared(Y_train)
+    model = bnn_func(ann_input, ann_output, **bnn_kwargs)
+
+    with model:
+        trace = pm.sample(**sample_kwargs)
+
+        ppc_train = pm.sample_ppc(trace, samples=500, progressbar=False)
+        pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+
+        ann_input.set_value(X_test)
+        ann_output.set_value(Y_test)
+
+        ppc_test = pm.sample_ppc(trace, samples=500, progressbar=False)
+        pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
+    
+    return pred_train, pred_test, trace
+
 if __name__ == "__main__":
     print("Loading data...")
-    X_train, Y_train, X_val, Y_val, X_test, y_test = load_dataset()
+    X_train, Y_train, X_val, Y_val, X_test, Y_test = load_dataset()
 
     X_train = np.asarray([entry.flatten() for entry in X_train])
     X_val = np.asarray([entry.flatten() for entry in X_val])
     X_test = np.asarray([entry.flatten() for entry in X_test])
-    # Building a theano.shared variable with a subset of the data to make construction of the model faster.
-	# We will later switch that out, this is just a placeholder to get the dimensionality right.
-    ann_input = theano.shared(X_train.astype(np.float64))
-    ann_output = theano.shared(Y_train.astype(np.float64))
-    neural_network = construct_bnn(ann_input, ann_output)
-    #minibatch_x = pm.Minibatch(X_train.astype(np.float64), batch_size=500)
-    #minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
 
+    # fit and eval
+    pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_bnn)
+
+    # Print train accuracy
+    print ("Train accuracy = {:.2f}%".format(100 * np.mean(pred_train == Y_train)))
+    # Print test accuracy
+    print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
+
+
+'''
     with neural_network:
         trace = pm.sample()
     
@@ -140,3 +165,4 @@ if __name__ == "__main__":
     #plt.ylabel('ELBO')
     #plt.xlabel('iteration')
     #plt.show()
+'''

@@ -127,13 +127,13 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         #step = pm.NUTS(scaling=start)
         #trace = pm.sample(500, step, start=start, progressbar=True)
 
-        ppc_train = pm.sample_ppc(trace, samples=500, progressbar=False)
+        ppc_train = pm.sample_ppc(trace, samples=500)
         pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
 
         ann_input.set_value(X_test)
         ann_output.set_value(Y_test)
 
-        ppc_test = pm.sample_ppc(trace, samples=500, progressbar=False)
+        ppc_test = pm.sample_ppc(trace, samples=500)
         pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
     return pred_train, pred_test, trace

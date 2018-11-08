@@ -9,14 +9,20 @@ from warnings import filterwarnings
 import pandas as pd
 filterwarnings('ignore')
 sns.set_style('white')
-from sklearn import datasets
-from sklearn.preprocessing import scale
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import make_moons
 from sklearn.metrics import accuracy_score
 from scipy.stats import mode
 import sys, os
 import theano.tensor as T
+
+# Package related to cleverhans
+import logging
+import tensorflow as tf
+from cleverhans.loss import CrossEntropy
+from cleverhans.utils_tf import model_eval
+from cleverhans.train import train
+from cleverhans.attacks import BasicIterativeMethod
+from cleverhans.utils import AccuracyReport, set_log_level
+from cleverhans_tutorials.tutorial_models import ModelBasicCNN
 
 def construct_nn(ann_input, ann_output):
     n_hidden = 50
@@ -107,6 +113,7 @@ def load_dataset():
     # (It doesn't matter how we do this as long as we can read them again.)
     return X_train, y_train, X_val, y_val, X_test, y_test
 
+# Fit and evaluate bnn
 def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None, sample_kwargs=None):
     if bnn_kwargs is None:
         bnn_kwargs = {}
@@ -139,6 +146,35 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
     return inference, pred_train, pred_test, trace
+
+'''
+def adversarial_attack(X_train, X_test, Y_train, Y_test, model, num_threads=None):
+    report = AccuracyReport()
+
+    # Set TF random seed to improve reproducibility
+    tf.set_random_seed(1234)
+
+    # Set logging level to see debug information
+    set_log_level(logging.DEBUG)
+
+    # Create TF session
+    if num_threads:
+        config_args = dict(intra_op_parallelism_threads=1)
+    else:
+        config_args = {}
+    sess = tf.Session(config=tf.ConfigProto(**config_args))
+
+    bim_params = {
+        'eps': 0.3,
+        'eps_iter': 0.1,
+        'clip_min': 0.,
+        'clip_max': 1.
+    }
+    
+    bim = BasicIterativeMethod(model, sess=sess)
+    adv_x = bim.generate(x, **bim_params)
+    preds_adv = model.get_logits(adv_x)
+'''
 
 if __name__ == "__main__":
     print("Loading data...")

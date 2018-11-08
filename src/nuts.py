@@ -19,7 +19,7 @@ import sys, os
 import theano.tensor as T
 
 def construct_bnn(ann_input, ann_output):
-    n_hidden = 5
+    n_hidden = 50
     
     # Initialize random weights between each layer
     init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)

@@ -111,8 +111,8 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         bnn_kwargs = {}
     
     if sample_kwargs is None:
-        #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'}
-        sample_kwargs = {'chains': 1, 'init': 'advi+adapt_diag', 'draws': 500}
+        #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'advi+adapt_diag'} // This is faster
+        sample_kwargs = {'chains': 1, 'init': 'auto', 'draws': 500}
     
     ann_input = theano.shared(X_train.astype(floatX))
     ann_output = theano.shared(Y_train.astype(floatX))

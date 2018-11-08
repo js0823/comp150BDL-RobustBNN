@@ -194,6 +194,15 @@ if __name__ == "__main__":
     #print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
     print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
 
+    plt.figure(1)
+    plt.plot(-inference.hist)
+    plt.ylabel('ELBO')
+    plt.xlabel('iteration')
+    
+    plt.figure(2)
+    pm.traceplot(trace)
+    
+    plt.show()
 
 '''
     with neural_network:

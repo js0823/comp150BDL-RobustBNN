@@ -1,4 +1,5 @@
 import theano
+floatX = theano.config.floatX
 import pymc3 as pm
 import sklearn
 import numpy as np
@@ -22,9 +23,9 @@ def construct_nn(ann_input, ann_output):
     n_hidden = 50
     
     # Initialize random weights between each layer
-    init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(theano.config.floatX)
-    init_2 = np.random.randn(n_hidden, n_hidden).astype(theano.config.floatX)
-    init_out = np.random.randn(n_hidden,10).astype(theano.config.floatX)
+    init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
+    init_2 = np.random.randn(n_hidden, n_hidden).astype(floatX)
+    init_out = np.random.randn(n_hidden,10).astype(floatX)
         
     with pm.Model() as neural_network:
         # Weights from input to hidden layer
@@ -118,12 +119,12 @@ if __name__ == "__main__":
 	X_test = np.asarray([entry.flatten() for entry in X_test])
 	# Building a theano.shared variable with a subset of the data to make construction of the model faster.
 	# We will later switch that out, this is just a placeholder to get the dimensionality right.
-	ann_input = theano.shared(X_train.astype(np.float64))
-	ann_output = theano.shared(Y_train.astype(np.float64))
+	ann_input = theano.shared(X_train.astype(floatX))
+	ann_output = theano.shared(Y_train.astype(floatX))
 
 	neural_network = construct_nn(ann_input, ann_output)
-	minibatch_x = pm.Minibatch(X_train.astype(np.float64), batch_size=500)
-	minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
+	minibatch_x = pm.Minibatch(X_train.astype(floatX), batch_size=500)
+	minibatch_y = pm.Minibatch(Y_train.astype(floatX), batch_size=500)
 
 
 	# from pymc3.theanof import set_tt_rng, MRG_RandomStreams

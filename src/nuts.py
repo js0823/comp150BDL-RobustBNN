@@ -150,9 +150,11 @@ if __name__ == "__main__":
     pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_bnn)
 
     # Print train accuracy
-    print ("Train accuracy = {:.2f}%".format(100 * np.mean(pred_train == Y_train)))
+    #print ("Train accuracy = {:.2f}%".format(100 * np.mean(pred_train == Y_train)))
+    print('Train accuracy = {}%'.format(accuracy_score(Y_train, pred_train) * 100))
     # Print test accuracy
-    print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
+    #print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
+    print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
 
 
 '''

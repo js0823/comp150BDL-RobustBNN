@@ -50,8 +50,9 @@ def construct_nn(ann_input, ann_output):
         act_out = T.nnet.softmax(pm.math.dot(act_2, 
                                               weights_2_out))
 
-        out = pm.Categorical('out', act_out,observed=ann_output)
-
+        out = pm.Categorical('out', act_out, observed=ann_output,
+                           total_size=Y_train.shape[0]) # IMPORTANT for minibatches
+        
     return neural_network
 
 def load_dataset():

@@ -114,6 +114,6 @@ venv.bak/
 *.DS_Store
 
 # etc
-*.png
+*.jpg
 *.jpeg
 *.gz

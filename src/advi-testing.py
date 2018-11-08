@@ -22,10 +22,9 @@ from cleverhans.utils_tf import model_eval
 from cleverhans.train import train
 from cleverhans.attacks import BasicIterativeMethod
 from cleverhans.utils import AccuracyReport, set_log_level
-from cleverhans_tutorials.tutorial_models import ModelBasicCNN
 
 def construct_nn(ann_input, ann_output):
-    n_hidden = 50
+    n_hidden = 10
     
     # Initialize random weights between each layer
     init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
@@ -120,7 +119,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     
     if sample_kwargs is None:
         #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'}
-        sample_kwargs = {'draws': 500, 'init': 'advi+adapt_diag'}
+        sample_kwargs = {'draws': 500, 'init': 'auto'}
     
     ann_input = theano.shared(X_train.astype(floatX))
     ann_output = theano.shared(Y_train.astype(floatX))
@@ -164,6 +163,14 @@ def adversarial_attack(X_train, X_test, Y_train, Y_test, model, num_threads=None
         config_args = {}
     sess = tf.Session(config=tf.ConfigProto(**config_args))
 
+    # Use Image Parameters
+    img_rows, img_cols, nchannels = X_train.shape[1:4]
+    nb_classes = Y_train.shape[1]
+
+    # TF placeholders
+    x = tf.placeholder(tf.float32, shape=(None, img_rows, img_cols, nchannels))
+    y = tf.placeholder(tf.float32, shape=(None, nb_classes))
+
     bim_params = {
         'eps': 0.3,
         'eps_iter': 0.1,
@@ -203,22 +210,3 @@ if __name__ == "__main__":
     pm.traceplot(trace)
     
     plt.show()
-
-'''
-    with neural_network:
-        trace = pm.sample()
-    
-    ann_input.set_value(X_test)
-    ann_output.set_value(y_test)
-
-    with neural_network:
-        ppc = pm.sample_ppc(trace, samples=100)
-    
-    y_pred = mode(ppc['out'], axis=0).mode[0, :]
-    
-    print('Accuracy on test data = {}%'.format(accuracy_score(y_test, y_pred) * 100))
-    #plt.plot(-step.hist)
-    #plt.ylabel('ELBO')
-    #plt.xlabel('iteration')
-    #plt.show()
-'''

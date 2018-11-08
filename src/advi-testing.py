@@ -24,7 +24,7 @@ from cleverhans.attacks import BasicIterativeMethod
 from cleverhans.utils import AccuracyReport, set_log_level
 
 def construct_nn(ann_input, ann_output):
-    n_hidden = 10
+    n_hidden = 50
     
     # Initialize random weights between each layer
     init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)

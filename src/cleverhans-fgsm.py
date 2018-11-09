@@ -21,9 +21,10 @@ from cleverhans.dataset import MNIST
 from cleverhans.utils_tf import model_eval
 from cleverhans.train import train
 from cleverhans.attacks import FastGradientMethod
-from cleverhans.attacks import CarliniWagnerL2
 from cleverhans.utils import AccuracyReport, set_log_level
 from cleverhans_tutorials.tutorial_models import ModelBasicCNN
+
+import matplotlib.pyplot as plt
 
 FLAGS = flags.FLAGS
 
@@ -34,6 +35,9 @@ CLEAN_TRAIN = True
 BACKPROP_THROUGH_ATTACK = False
 NB_FILTERS = 64
 
+# Legitimate and adversarial accuracy array for plotting
+legitimate = []
+adversarial = []
 
 def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                    test_end=10000, nb_epochs=NB_EPOCHS, batch_size=BATCH_SIZE,
@@ -115,8 +119,10 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
       report_text = None
     elif is_adv:
       report_text = 'adversarial'
+      adversarial.append(acc)
     else:
       report_text = 'legitimate'
+      legitimate.append(acc)
     if report_text:
       print('Test accuracy on %s examples: %0.4f' % (report_text, acc))
 
@@ -198,6 +204,9 @@ def main(argv=None):
                  clean_train=FLAGS.clean_train,
                  backprop_through_attack=FLAGS.backprop_through_attack,
                  nb_filters=FLAGS.nb_filters)
+  
+  print(legitimate)
+  print(adversarial)
 
 
 if __name__ == '__main__':

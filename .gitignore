@@ -117,3 +117,4 @@ venv.bak/
 *.jpg
 *.jpeg
 *.gz
+src/models

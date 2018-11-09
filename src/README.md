@@ -13,3 +13,6 @@ THEANO_FLAGS='mode=FAST_RUN,device=cuda,floatX=float64,optimizer_including=cudnn
 
 NUTS sampler on pymc3
 - Using gpu, max iteration is around 47s/it, making it 12 hours to run.
+
+Using AWS
+- Guide is here https://www.cs.tufts.edu/comp/150BDL/2018f/tufts_aws_setup.html

@@ -28,10 +28,10 @@ import matplotlib.pyplot as plt
 
 FLAGS = flags.FLAGS
 
-NB_EPOCHS = 10
+NB_EPOCHS = 3
 BATCH_SIZE = 128
 LEARNING_RATE = 0.001
-CLEAN_TRAIN = False
+CLEAN_TRAIN = True
 BACKPROP_THROUGH_ATTACK = False
 NB_FILTERS = 64
 

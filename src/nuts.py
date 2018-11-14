@@ -112,7 +112,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     
     if sample_kwargs is None:
         #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'} // advi+adapt_diag is faster
-        sample_kwargs = {'init': 'advi+adapt_diag', 'draws': 500}
+        sample_kwargs = {'init': 'auto', 'draws': 500}
     
     ann_input = theano.shared(X_train.astype(floatX))
     ann_output = theano.shared(Y_train.astype(floatX))
@@ -122,20 +122,18 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     with model:
         # pm.sample = Default draw is 500
         trace = pm.sample(**sample_kwargs)
-        print("Tracing done.")
 
-        ppc_train = pm.sample_ppc(trace, samples=100)
-        pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
-        print("Predict_training done.")
+        #ppc_train = pm.sample_ppc(trace, samples=100)
+        #pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
 
-        ann_input.set_value(X_test)
-        ann_output.set_value(Y_test)
+        #ann_input.set_value(X_test)
+        #ann_output.set_value(Y_test)
 
-        ppc_test = pm.sample_ppc(trace, samples=100)
-        pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
-        print("Predict_testing done.")
+        #ppc_test = pm.sample_ppc(trace, samples=100)
+        #pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
-    return pred_train, pred_test, trace
+    #return pred_train, pred_test, trace
+    return trace
 
 if __name__ == "__main__":
     print("Loading data...")
@@ -146,20 +144,17 @@ if __name__ == "__main__":
     X_test = np.asarray([entry.flatten() for entry in X_test])
 
     # fit and eval
-    pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
+    #pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
+    trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
 
     # Print train accuracy
     #print ("Train accuracy = {:.2f}%".format(100 * np.mean(pred_train == Y_train)))
-    print('Train accuracy = {}%'.format(accuracy_score(Y_train, pred_train) * 100))
+    #print('Train accuracy = {}%'.format(accuracy_score(Y_train, pred_train) * 100))
     # Print test accuracy
     #print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
-    print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
-
-    plt.figure(1)
-    pm.plot_posterior(trace)
-    plt.figure(2)
+    #print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
     pm.traceplot(trace)
-    plt.show()
+    plt.savefig('nuts-trace.png')
 
 
 '''

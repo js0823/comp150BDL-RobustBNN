@@ -112,7 +112,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     
     if sample_kwargs is None:
         #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'} // advi+adapt_diag is faster
-        sample_kwargs = {'chains': 1, 'init': 'auto', 'draws': 500}
+        sample_kwargs = {'cores': 1, 'init': 'auto', 'draws': 500}
     
     ann_input = theano.shared(X_train.astype(floatX))
     ann_output = theano.shared(Y_train.astype(floatX))
@@ -130,7 +130,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     ann_output.set_value(Y_test)
 
     with model:
-        ppc_test = pm.sample_ppc(trace, samples=500)
+        ppc_test = pm.sample_ppc(trace, samples=100)
         pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
     #return pred_train, pred_test, trace

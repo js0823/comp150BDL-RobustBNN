@@ -17,3 +17,4 @@ NUTS sampler on pymc3
 
 Using AWS
 - Guide is here https://www.cs.tufts.edu/comp/150BDL/2018f/tufts_aws_setup.html
+- our aws server = aws-gpu-3.eecs.tufts.edu

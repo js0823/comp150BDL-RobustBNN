@@ -132,8 +132,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
     with model:
         inference = pm.ADVI()
         approx = pm.fit(n=50000, method=inference, more_replacements={ann_input:minibatch_x, ann_output:minibatch_y})
-
-    trace = approx.sample(draws=500)
+        trace = approx.sample(draws=500)
 
     #ppc_train = pm.sample_ppc(trace, samples=100)
     #pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
@@ -143,8 +142,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
 
     with model:
         ppc_test = pm.sample_ppc(trace, samples=100)
-        
-    pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
+        pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
     return inference, pred_test, trace
 

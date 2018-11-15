@@ -133,18 +133,20 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         inference = pm.ADVI()
         approx = pm.fit(n=50000, method=inference, more_replacements={ann_input:minibatch_x, ann_output:minibatch_y})
 
-        trace = approx.sample(draws=500)
+    trace = approx.sample(draws=500)
 
-        ppc_train = pm.sample_ppc(trace, samples=100)
-        pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+    #ppc_train = pm.sample_ppc(trace, samples=100)
+    #pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
 
-        ann_input.set_value(X_test)
-        ann_output.set_value(Y_test)
+    ann_input.set_value(X_test)
+    ann_output.set_value(Y_test)
 
+    with model:
         ppc_test = pm.sample_ppc(trace, samples=100)
-        pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
+        
+    pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
     
-    return inference, pred_train, pred_test, trace
+    return inference, pred_test, trace
 
 '''
 def adversarial_attack(X_train, X_test, Y_train, Y_test, model, num_threads=None):
@@ -192,11 +194,12 @@ if __name__ == "__main__":
     X_test = np.asarray([entry.flatten() for entry in X_test])
 
     # fit and eval
-    inference, pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
+    #inference, pred_train, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
+    inference, pred_test, trace = fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, construct_nn)
 
     # Print train accuracy
     #print ("Train accuracy = {:.2f}%".format(100 * np.mean(pred_train == Y_train)))
-    print('Train accuracy = {}%'.format(accuracy_score(Y_train, pred_train) * 100))
+    #print('Train accuracy = {}%'.format(accuracy_score(Y_train, pred_train) * 100))
     # Print test accuracy
     #print ("Test accuracy = {:.2f}%".format(100 * np.mean(pred_test == Y_test)))
     print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
@@ -205,8 +208,8 @@ if __name__ == "__main__":
     plt.plot(-inference.hist)
     plt.ylabel('ELBO')
     plt.xlabel('iteration')
+    plt.savefig('advi-elbo.png')
     
     plt.figure(2)
     pm.traceplot(trace)
-    
-    plt.show()
+    plt.savefig('advi-trace.png')

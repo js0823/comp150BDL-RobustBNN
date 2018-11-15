@@ -7,7 +7,8 @@ Jong's Environment
 - pymc3, tensorflow-gpu, cleverhans, theano installed
 
 Testing:
-THEANO_FLAGS='mode=FAST_RUN,device=cuda,floatX=float32,optimizer_including=cudnn'
+THEANO_FLAGS='mode=FAST_RUN,device=cuda,floatX=float32,optimizer_including=cudnn' for gpu
+THEANO_FLAGS='mode=FAST_RUN,floatX=float32' for cpu
 - This makes Theano use the gpu instead of cpu
 - Create new conda environment with python 3 and installing tensorflow(or tensorflow-gpu if you have gpu)
 

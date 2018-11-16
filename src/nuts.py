@@ -19,7 +19,7 @@ import sys, os
 import theano.tensor as T
 
 def construct_nn(ann_input, ann_output):
-    n_hidden = 10
+    n_hidden = 50
     
     # Initialize random weights between each layer
     init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
@@ -111,7 +111,7 @@ def fit_and_eval_bnn(X_train, X_test, Y_train, Y_test, bnn_func, bnn_kwargs=None
         bnn_kwargs = {}
     
     if sample_kwargs is None:
-        #sample_kwargs = {'chains': 1, 'draws': 500, 'init': 'auto'} // advi+adapt_diag is faster
+        #sample_kwargs = {'cores': 1, 'draws': 500, 'init': 'auto'} // advi+adapt_diag is faster
         sample_kwargs = {'cores': 1, 'init': 'auto', 'draws': 500}
     
     ann_input = theano.shared(X_train.astype(floatX))

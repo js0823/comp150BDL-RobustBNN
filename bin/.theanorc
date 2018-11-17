@@ -1,0 +1,6 @@
+[global]
+floatX = float32
+device = cuda
+
+[cuda]
+root = /opt/cuda

@@ -1,0 +1,8 @@
+From Mike's comments:
+- Scale variance down for each weight
+- Look at NUTS tree-depth
+- MC-Drop's learning rate and batch size
+- Alpha-d VI's alpha
+- We should figure out what Alpha-d VI offers
+- Think about CIFAR format once we get this working
+

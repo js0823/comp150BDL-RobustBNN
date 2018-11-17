@@ -15,7 +15,11 @@ downloads/
 eggs/
 .eggs/
 lib/
+bin/
 lib64/
+man/
+pip-selfcheck.json
+pyvenv.cfg
 parts/
 sdist/
 var/
@@ -114,6 +118,7 @@ venv.bak/
 *.DS_Store
 
 # etc
-*.png
-*.jpeg
 *.jpg
+*.jpeg
+*.gz
+src/models

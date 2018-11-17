@@ -1,4 +1,5 @@
 import theano
+floatX = theano.config.floatX
 import pymc3 as pm
 import sklearn
 import numpy as np
@@ -128,12 +129,12 @@ if __name__ == "__main__":
 	X_test = np.asarray([entry.flatten() for entry in X_test])
 	# Building a theano.shared variable with a subset of the data to make construction of the model faster.
 	# We will later switch that out, this is just a placeholder to get the dimensionality right.
-	ann_input = theano.shared(X_train.astype(np.float64))
-	ann_output = theano.shared(Y_train.astype(np.float64))
+	ann_input = theano.shared(X_train.astype(floatX))
+	ann_output = theano.shared(Y_train.astype(floatX))
 
 	neural_network = construct_nn(ann_input, ann_output)
-	minibatch_x = pm.Minibatch(X_train.astype(np.float64), batch_size=500)
-	minibatch_y = pm.Minibatch(Y_train.astype(np.float64), batch_size=500)
+	minibatch_x = pm.Minibatch(X_train.astype(floatX), batch_size=500)
+	minibatch_y = pm.Minibatch(Y_train.astype(floatX), batch_size=500)
 
 
 	# from pymc3.theanof import set_tt_rng, MRG_RandomStreams
@@ -159,7 +160,7 @@ if __name__ == "__main__":
 	#Given n, spit out n model files or np arrays posterior samples
 	plt.plot(-inference.hist)
 	plt.ylabel('ELBO')
-	plt.xlabel('iteration');
+	plt.xlabel('iteration')
 	plt.show()
 
 	# # create symbolic input

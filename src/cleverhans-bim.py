@@ -1,3 +1,11 @@
+"""
+This tutorial shows how to generate adversarial examples using BIM
+and train a model using adversarial training with TensorFlow.
+It is very similar to mnist_tutorial_keras_tf.py, which does the same
+thing but with a dependence on keras.
+The original paper can be found at:
+https://arxiv.org/abs/1412.6572
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,15 +24,20 @@ from cleverhans.attacks import BasicIterativeMethod
 from cleverhans.utils import AccuracyReport, set_log_level
 from cleverhans_tutorials.tutorial_models import ModelBasicCNN
 
+import matplotlib.pyplot as plt
+
 FLAGS = flags.FLAGS
 
-NB_EPOCHS = 6
+NB_EPOCHS = 3
 BATCH_SIZE = 128
 LEARNING_RATE = 0.001
 CLEAN_TRAIN = True
 BACKPROP_THROUGH_ATTACK = False
 NB_FILTERS = 64
 
+# Legitimate and adversarial accuracy array for plotting
+adversarial = []
+legitimate = []
 
 def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
                    test_end=10000, nb_epochs=NB_EPOCHS, batch_size=BATCH_SIZE,
@@ -107,13 +120,16 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
 
   def do_eval(preds, x_set, y_set, report_key, is_adv=None):
     acc = model_eval(sess, x, y, preds, x_set, y_set, args=eval_params)
-    setattr(report, report_key, acc)
+    setattr(report, report_key, acc)   
     if is_adv is None:
       report_text = None
     elif is_adv:
       report_text = 'adversarial'
+      adversarial.append(acc)
     else:
       report_text = 'legitimate'
+      legitimate.append(acc)
+      
     if report_text:
       print('Test accuracy on %s examples: %0.4f' % (report_text, acc))
 
@@ -132,7 +148,8 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     if testing:
       do_eval(preds, x_train, y_train, 'train_clean_train_clean_eval')
 
-    # Basic Iterative Attack
+    # Initialize the BasicIterativeMethod attack object and
+    # graph
     bim = BasicIterativeMethod(model, sess=sess)
     adv_x = bim.generate(x, **bim_params)
     
@@ -145,57 +162,65 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     if testing:
       do_eval(preds_adv, x_train, y_train, 'train_clean_train_adv_eval')
 
-    # print('Repeating the process, using adversarial training')
+    print('Repeating the process, using adversarial training')
 
-  #TODO if want adversarial training: adversarial training for BasicIterativeMethod
-  # # Create a new model and train it to be robust to FastGradientMethod
-  # model2 = ModelBasicCNN('model2', nb_classes, nb_filters)
-  # fgsm2 = FastGradientMethod(model2, sess=sess)
+  # Create a new model and train it to be robust to BasicIterativeMethod
+  model2 = ModelBasicCNN('model2', nb_classes, nb_filters)
+  bim2 = BasicIterativeMethod(model2, sess=sess)
 
-  # def attack(x):
-  #   return fgsm2.generate(x, **fgsm_params)
+  def attack(x):
+    return bim2.generate(x, **bim_params)
 
-  # loss2 = CrossEntropy(model2, smoothing=label_smoothing, attack=attack)
-  # preds2 = model2.get_logits(x)
-  # adv_x2 = attack(x)
+  loss2 = CrossEntropy(model2, smoothing=label_smoothing, attack=attack)
+  preds2 = model2.get_logits(x)
+  adv_x2 = attack(x)
 
-  # if not backprop_through_attack:
-  #   # For the fgsm attack used in this tutorial, the attack has zero
-  #   # gradient so enabling this flag does not change the gradient.
-  #   # For some other attacks, enabling this flag increases the cost of
-  #   # training, but gives the defender the ability to anticipate how
-  #   # the atacker will change their strategy in response to updates to
-  #   # the defender's parameters.
-  #   adv_x2 = tf.stop_gradient(adv_x2)
-  # preds2_adv = model2.get_logits(adv_x2)
+  if not backprop_through_attack:
+    # For the fgsm attack used in this tutorial, the attack has zero
+    # gradient so enabling this flag does not change the gradient.
+    # For some other attacks, enabling this flag increases the cost of
+    # training, but gives the defender the ability to anticipate how
+    # the atacker will change their strategy in response to updates to
+    # the defender's parameters.
+    adv_x2 = tf.stop_gradient(adv_x2)
+  preds2_adv = model2.get_logits(adv_x2)
 
-  # def evaluate2():
-  #   # Accuracy of adversarially trained model on legitimate test inputs
-  #   do_eval(preds2, x_test, y_test, 'adv_train_clean_eval', False)
-  #   # Accuracy of the adversarially trained model on adversarial examples
-  #   do_eval(preds2_adv, x_test, y_test, 'adv_train_adv_eval', True)
+  def evaluate2():
+    # Accuracy of adversarially trained model on legitimate test inputs
+    do_eval(preds2, x_test, y_test, 'adv_train_clean_eval', False)
+    # Accuracy of the adversarially trained model on adversarial examples
+    do_eval(preds2_adv, x_test, y_test, 'adv_train_adv_eval', True)
 
-  # # Perform and evaluate adversarial training
-  # train(sess, loss2, x_train, y_train, evaluate=evaluate2,
-  #       args=train_params, rng=rng, var_list=model2.get_params())
+  # Perform and evaluate adversarial training
+  train(sess, loss2, x_train, y_train, evaluate=evaluate2,
+        args=train_params, rng=rng, var_list=model2.get_params())
 
-  # # Calculate training errors
-  # if testing:
-  #   do_eval(preds2, x_train, y_train, 'train_adv_train_clean_eval')
-  #   do_eval(preds2_adv, x_train, y_train, 'train_adv_train_adv_eval')
+  # Calculate training errors
+  if testing:
+    do_eval(preds2, x_train, y_train, 'train_adv_train_clean_eval')
+    do_eval(preds2_adv, x_train, y_train, 'train_adv_train_adv_eval')
 
   return report
-
 
 def main(argv=None):
   from cleverhans_tutorials import check_installation
   check_installation(__file__)
 
   mnist_tutorial(nb_epochs=FLAGS.nb_epochs, batch_size=FLAGS.batch_size,
-                 learning_rate=FLAGS.learning_rate,
-                 clean_train=FLAGS.clean_train,
-                 backprop_through_attack=FLAGS.backprop_through_attack,
-                 nb_filters=FLAGS.nb_filters)
+                          learning_rate=FLAGS.learning_rate,
+                          clean_train=FLAGS.clean_train,
+                          backprop_through_attack=FLAGS.backprop_through_attack,
+                          nb_filters=FLAGS.nb_filters)
+
+  print(adversarial)
+  print(legitimate)
+  plt.plot(adversarial, linestyle='--', marker='o', color='r', label='adversarial')
+  plt.plot(legitimate, linestyle='-', marker='o', color='b', label='legitimate')
+  plt.title('Training CNN to be robust to Iterative Method')
+  plt.xlabel('epoch')
+  plt.ylabel('Accuracy')
+  plt.legend()
+  plt.show()
 
 
 if __name__ == '__main__':

@@ -156,6 +156,10 @@ if __name__ == "__main__":
     print('Test accuracy = {}%'.format(accuracy_score(Y_test, pred_test) * 100))
     pm.traceplot(trace)
     plt.savefig('nuts-trace.png')
+    pm.energyplot(trace)
+    plt.savefig('nuts-trace-energyplot.png')
+    pm.plot_posterior(trace)
+    plt.savefig('nuts-trace-plot_posterior.png')
 
 
 '''

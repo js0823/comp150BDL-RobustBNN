@@ -106,10 +106,15 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   }
   eval_params = {'batch_size': batch_size}
   bim_params = {
-      'eps': 0.3,
-      'eps_iter': 0.1,
-      'clip_min': 0.,
-      'clip_max': 1.
+      'eps': 0.3, #maximum distortion of adversarial examples compared to orig, default = 0.3
+      'eps_iter': 0.1, #step size for each attack iteration, default = 0.1
+      'clip_min': 0., #min input component val, default = 0
+      'clip_max': 1.  #max input component val, default = 1
+      #y #tensor with model labels
+      #y_target #tensor with labels to targer
+      #ord #order of the norm (1,2,np.inf)
+      #nb_iter #number of attack iterations, default = 10
+      #x #model's symbolic inputs
   }
   rng = np.random.RandomState([2017, 8, 30])
 
@@ -147,6 +152,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     # graph
     bim = BasicIterativeMethod(model, sess=sess)
     adv_x = bim.generate(x, **bim_params)
+    
     preds_adv = model.get_logits(adv_x)
 
     # Evaluate the accuracy of the MNIST model on adversarial examples

@@ -122,3 +122,8 @@ venv.bak/
 *.jpeg
 *.gz
 src/models
+bin/
+man/
+gpu.txt
+pip-selfcheck.json
+pyvenv.cfg

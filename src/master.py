@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score
 
 ###################### Configurations ########################
 inference_alg = 'advi'  # Can be advi, nuts
-model = 'bnn' # can be bnn or cnn
+modeltype = 'bnn' # can be bnn or cnn
 data = 'MNIST' # can be MNIST or CIFAR10
 h_layer_size = 50
 mean = 0
@@ -39,4 +39,4 @@ def run_config(model, inference_alg, data):
 
 if __name__ == "__main__":
 	# Run the main program
-	accuracies = run_config(model, inference_alg, data)
+	accuracies = run_config(modeltype, inference_alg, data)

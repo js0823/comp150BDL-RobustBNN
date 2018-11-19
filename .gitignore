@@ -124,6 +124,7 @@ venv.bak/
 src/models
 bin/
 man/
+lib64
 gpu.txt
 pip-selfcheck.json
 pyvenv.cfg

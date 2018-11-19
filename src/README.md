@@ -14,6 +14,10 @@ THEANO_FLAGS='mode=FAST_RUN,floatX=float32' for cpu
 - You can export this to your bashrc if you are using linux. For example in your bashrc add
     export THEANO_FLAGS='mode=FAST_RUN,device=cuda,floatX=float32,optimizer_including=cudnn'
 
+Using Tufts cluster:
+- srun -p gpu -t 0-06:00:00 --mem 8000 --pty bash
+- module load cuda
+
 Using AWS
 - Guide is here https://www.cs.tufts.edu/comp/150BDL/2018f/tufts_aws_setup.html
 - our aws server = aws-gpu-3.eecs.tufts.edu

@@ -8,7 +8,7 @@ import pymc3 as pm
 from sklearn.metrics import accuracy_score
 
 ###################### Configurations ########################
-inference_alg = 'nuts'  # Can be advi, nuts
+inference_alg = 'advi'  # Can be advi, nuts
 modeltype = 'bnn' # can be bnn or cnn
 data = 'MNIST' # can be MNIST or CIFAR10
 h_layer_size = 50

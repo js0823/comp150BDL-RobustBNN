@@ -6,8 +6,6 @@ filterwarnings('ignore')
 import numpy as np
 import theano.tensor as T
 import loaddata
-import keras
-import h5py
 
 def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False):
 	if conv is False: # Create BNN

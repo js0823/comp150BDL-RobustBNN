@@ -15,6 +15,7 @@ h_layer_size = 50
 mean = 0
 std = 1
 nPosterior_samples = 500
+posterior_sample_filename = 'advi-sample.pkl'
 ##############################################################
 
 def run_config(modeltype, inference_alg, data):
@@ -37,7 +38,7 @@ def run_config(modeltype, inference_alg, data):
 	elif inference_alg is 'nuts':
 		pred_train, trace = infer.train_model('nuts', nn, nPosterior_samples, nn_input, nn_output, X_train, Y_train)
 	
-	infer.save_posterior(nn, trace, 'advi-sample.pkl')
+	infer.save_posterior(nn, trace, posterior_sample_filename)
 	
 	accuracies = accuracy_score(Y_train, pred_train) * 100
 

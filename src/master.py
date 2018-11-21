@@ -14,8 +14,8 @@ data = 'MNIST' # can be MNIST or CIFAR10
 h_layer_size = 50
 mean = 0
 std = 1
-nPosterior_samples = 500
-posterior_sample_filename = 'advi-sample.pkl'
+nPosterior_samples = 100
+posterior_sample_filename = 'nuts-sample.pkl'
 ##############################################################
 
 def run_config(modeltype, inference_alg, data):

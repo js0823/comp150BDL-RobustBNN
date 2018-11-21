@@ -58,6 +58,10 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		from keras.layers import Dense, Conv2D, Flatten
 
 		model = Sequential()
+		model.add(Conv2D(64, kernel_size=3, activation='relu', input_shape=(X_train.shape[1], n_hidden)))
+		model.add(Conv2D(64, kernel_size=3, activation='relu'))
+		model.add(Flatten())
+		model.add(Dense(10, activation='softmax'))
         
 	return neural_network
 		

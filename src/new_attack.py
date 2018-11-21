@@ -457,6 +457,6 @@ def test(Model, data, path):
 
 
 
-ISMNIST = True
-test(MNISTModel, MNIST(), "models/mnist")
-# test(CIFARModel, CIFAR(), "models/cifar")
+ISMNIST = False
+# test(MNISTModel, MNIST(), "models/mnist")
+test(CIFARModel, CIFAR(), "models/cifar")

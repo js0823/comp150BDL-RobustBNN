@@ -350,7 +350,7 @@ def test(Model, data, path):
     
     sess = keras.backend.get_session()
 
-    N = 200
+    N = 50
     labs = get_labs(data.test_data[:N])
     print(labs)
     print('good?',np.sum(labs*data.test_labels[:N]))
@@ -360,6 +360,8 @@ def test(Model, data, path):
                        targeted=True, confidence=0)
     adv = attack.attack(data.test_data[:N], labs)
     guess = model.predict(adv)
+    mc_drop_preds = modeld.predict(adv)
+    print('Accuracy of MC-dropout on gray-box attack',np.mean(np.argmax(mc_drop_preds,axis=1) == np.argmax(data.test_labels,axis=1)))
     print('average distortion',np.mean(np.sum((data.test_data[:N]-adv)**2,axis=(1,2,3))**.5))
     print(guess[:10])
 
@@ -405,13 +407,13 @@ def test(Model, data, path):
     #exit(0)
 
     
-    # adv = attack.attack(data.test_data[:N], labs)
-    adv = attack.attack(data.test_data[:N], data.test_labels[:N])
+    adv = attack.attack(data.test_data[:N], labs)
+    # adv = attack.attack(data.test_data[:N], data.test_labels[:N])
 
     np.save("dropout_adv_"+str(ISMNIST),adv)
     #adv = np.load("/tmp/qq.npy")
     
-    guess = model.predict(adv)
+    guess = modeld.predict(adv)
 
     print('normal predictions',guess)
 

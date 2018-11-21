@@ -1,3 +1,5 @@
+import pickle
+
 import theano
 floatX = theano.config.floatX
 import pymc3 as pm
@@ -148,14 +150,18 @@ if __name__ == "__main__":
 	# with neural_network_minibatch:
 	#     inference = pm.ADVI()
 	#     approx = pm.fit(40000, method=inference)
-	trace = approx.sample(draws=500)
-	
-	# print(trace.varnames)
-	# print(trace[0])
-	# print("type")
-	# print(type(trace[0]['w_2_out']))
-	# print("summary")
-	# print(pm.summary(trace))
+	trace = approx.sample(draws=50)
+	filename = 'example_trace.pkl'
+	with open(filename, 'wb') as f:
+		pickle.dump(trace, f)
+
+	print(trace.varnames)
+	print(trace[0])
+	print(trace[0]['w_2_out'].shape)
+	print("type")
+	print(type(trace[0]['w_2_out']))
+	print("summary")
+	print(pm.summary(trace))
 
 	#Given n, spit out n model files or np arrays posterior samples
 	plt.plot(-inference.hist)

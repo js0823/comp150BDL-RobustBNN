@@ -1,8 +1,35 @@
-From Mike's comments:
+Training:
+- Spin up LeNet in Theano/Keras
 - Scale variance down for each weight
-- Look at NUTS tree-depth
-- MC-Drop's learning rate and batch size
-- Alpha-d VI's alpha
-- We should figure out what Alpha-d VI offers
-- Think about CIFAR format once we get this working
+- Train it with ADVI
+- Train it with NUTS
 
+MC-Drop:
+- Tune learning rate
+- Tune dropout probability, find where it is in the code
+
+Glue:
+- Make glue code compatible with LeNet
+
+Attack:
+- Figure out how to make attack untargeted -- what do we put in the
+labels argument? Do we need it?
+- Split up into gray box and white box attack
+- Tune hyperparameters of attack
+- Write a function to evaluate the accuracy of a model on adv. examples
+
+Visualizing:
+- Make sure that we have a trace for each trained models
+- Make sure that we have an accuracy number for each trained model
+- Plot adversarial accuracy as a function of distortion/strength of attack,
+where each line represents an inference method under a threat model
+- Plot ROC-AUC value of detection as a function of distortion/strength of attack
+where each line represents an inference method under a threat model
+- Save adversarial examples, one per class per inference per dataset (10 x 3 x 2)
+- ROC-AUC curve for each model
+
+
+Detection:
+- Use differentiable_u_multiple on the models returned
+by the glue code
+- Calculate ROC-AUC using the clean and adversarial examples

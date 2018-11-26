@@ -117,7 +117,7 @@ def load_dataset(data_string, train_start=0, train_end=60000, test_start=0, test
 		data = CIFAR10(train_start=train_start, train_end=train_end,
 				  test_start=test_start, test_end=test_end)
 	else:
-		print("Unsupported dataset {}".format(data))
+		print("Unsupported dataset {}".format(data_string))
 	x_train, y_train = data.get_set('train')
 	x_test, y_test = data.get_set('test')
 	return x_train, y_train, x_test, y_test

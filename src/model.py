@@ -34,7 +34,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 									shape=(n_hidden, n_hidden), 
 									testval=init_2)
 
-			# Add bias to first hidden layer
+			# Add bias to second hidden layer
 			weights_in_b2 = pm.Normal('b_2', mu=mean, sd=np.sqrt(var), 
 									shape=(n_hidden), testval=init_b_2)
 			
@@ -42,7 +42,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			weights_2_out = pm.Normal('w_2_out', mu=mean, sd=np.sqrt(var), 
 									shape=(n_hidden, 10), testval=init_out)
 
-			# Add bias to first hidden layer
+			# Add bias to last hidden layer
 			weights_in_b_out = pm.Normal('b_out', mu=mean, sd=np.sqrt(var), 
 									shape=(10), testval=init_b_out)
 

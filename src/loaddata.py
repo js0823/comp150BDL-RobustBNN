@@ -1,6 +1,9 @@
 import numpy as np
 import sys, os
-
+import keras
+from keras.datasets import cifar10
+from keras.datasets import mnist
+'''
 # TODO: We can use sklearn or keras to get datasets and not download the files.
 def load_MNIST_dataset():
     from urllib.request import urlretrieve
@@ -49,7 +52,12 @@ def load_MNIST_dataset():
     # We just return all the arrays in order, as expected in main().
     # (It doesn't matter how we do this as long as we can read them again.)
     return X_train, y_train, X_val, y_val, X_test, y_test
+'''
 
-def load_CIFAR_dataset():
-    # TODO
-    return 0
+def load_MNIST_dataset():
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    return x_train, y_train, x_test, y_test
+
+def load_CIFAR10_dataset():
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+    return x_train, y_train, x_test, y_test

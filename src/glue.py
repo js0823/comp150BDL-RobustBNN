@@ -33,7 +33,7 @@ def create_model(weights):
     num_layers = len(weights)/2
     layers = []
     
-    for i, (layer, data) in enumerate(weights.items())[1::2]:
+    for i, (layer, data) in enumerate(weights.items()):
         if i == 0:
             input_dim = data.shape[0]
             layers.append(Dense(data.shape[1], input_dim=input_dim))

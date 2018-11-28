@@ -30,7 +30,7 @@ class BNN:
 
 def create_model(weights):
     model = Sequential()
-    num_layers = len(weights)/2
+    num_layers = len(weights)
     layers = []
     
     for i, (layer, data) in enumerate(weights.items()):

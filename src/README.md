@@ -21,3 +21,13 @@ Using Tufts cluster:
 Using AWS
 - Guide is here https://www.cs.tufts.edu/comp/150BDL/2018f/tufts_aws_setup.html
 - our aws server = aws-gpu-3.eecs.tufts.edu
+
+Current Data
+- advi-bnn-CIFAR10.pkl
+    - Test data Accuracy = 10.72
+- advi-bnn-MNIST.pkl
+    - Test data Accuracy =
+- nuts-bnn-CIFAR10.pkl
+    - Test data Accuracy = 
+- nuts-bnn-MNIST.pkl
+    - Test data Accuracy = 

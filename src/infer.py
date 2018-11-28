@@ -19,7 +19,7 @@ def load_posterior(filename):
 	print("Loading model and trace done.")
 	return trace
 
-def train_model(inference_alg, model, num_posterior, nn_input, nn_output, X_train, Y_train):
+def train_model(inference_alg, model, num_posterior, nn_input, nn_output, X_train, Y_train, X_test, Y_test):
 	#inference_alg.fit(n, method, data)
 	#return posterior_samples
 
@@ -32,15 +32,30 @@ def train_model(inference_alg, model, num_posterior, nn_input, nn_output, X_trai
 			#db = pm.backends.Text('advi-backend')
 			trace = approx.sample(draws=num_posterior)
 
-			ppc_train = pm.sample_ppc(trace, samples=100)
-			pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+			#ppc_train = pm.sample_ppc(trace, samples=100)
+			#pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+
+		nn_input.set_value(X_test)
+		nn_output.set_value(Y_test)
+
+		with model:
+			ppc_test = pm.sample_ppc(trace, samples=100)
+			pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
+
 	elif inference_alg is 'nuts':
 		with model:
 			#db = pm.backends.Text('nuts-backend')
-			sample_kwargs = {'cores': 1, 'init': 'auto', 'draws': num_posterior}
+			sample_kwargs = {'cores': 1, 'init': 'advi+adapt_diag', 'draws': num_posterior}
 			trace = pm.sample(**sample_kwargs)
 
-			ppc_train = pm.sample_ppc(trace, samples=100)
-			pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+			#ppc_train = pm.sample_ppc(trace, samples=100)
+			#pred_train = mode(ppc_train['out'], axis=0).mode[0, :]
+
+		nn_input.set_value(X_test)
+		nn_output.set_value(Y_test)
+
+		with model:
+			ppc_test = pm.sample_ppc(trace, samples=100)
+			pred_test = mode(ppc_test['out'], axis=0).mode[0, :]
 	
-	return pred_train, trace
+	return pred_test, trace

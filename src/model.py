@@ -6,8 +6,9 @@ filterwarnings('ignore')
 import numpy as np
 import theano.tensor as T
 import loaddata
+import math
 
-def create_NN(n_hidden, mean, std, nn_input, nn_output, X_train, Y_train, conv=False):
+def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False):
 	if conv is False: # Create BNN
 		# Initialize random weights between each layer
 		init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
@@ -21,29 +22,29 @@ def create_NN(n_hidden, mean, std, nn_input, nn_output, X_train, Y_train, conv=F
 		
 		with pm.Model() as neural_network:
 			# Weights from input to hidden layer
-			weights_in_1 = pm.Normal('w_in_1', mu=mean, sd=std/n_hidden,
+			weights_in_1 = pm.Normal('w_in_1', mu=mean, sd=math.sqrt(var/n_hidden),
 									shape=(X_train.shape[1], n_hidden),
 									testval=init_1)
 
 			# Add bias to first hidden layer
-			weights_in_b1 = pm.Normal('b_1', mu=mean, sd=std/n_hidden, 
+			weights_in_b1 = pm.Normal('b_1', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden), testval=init_b_1)
 			
 			# Weights from 1st to 2nd layer
-			weights_1_2 = pm.Normal('w_1_2', mu=mean, sd=std/n_hidden, 
+			weights_1_2 = pm.Normal('w_1_2', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden, n_hidden), 
 									testval=init_2)
 
 			# Add bias to second hidden layer
-			weights_in_b2 = pm.Normal('b_2', mu=mean, sd=std/n_hidden, 
+			weights_in_b2 = pm.Normal('b_2', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden), testval=init_b_2)
 			
 			# Weights from hidden layer to output
-			weights_2_out = pm.Normal('w_2_out', mu=mean, sd=std/n_hidden, 
+			weights_2_out = pm.Normal('w_2_out', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden, 10), testval=init_out)
 
 			# Add bias to last hidden layer
-			weights_in_b_out = pm.Normal('b_out', mu=mean, sd=std/n_hidden, 
+			weights_in_b_out = pm.Normal('b_out', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(10), testval=init_b_out)
 
 			# Build neural-network using tanh activation function

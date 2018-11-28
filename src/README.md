@@ -23,11 +23,21 @@ Using AWS
 - our aws server = aws-gpu-3.eecs.tufts.edu
 
 Current Data
-- advi-bnn-CIFAR10.pkl
-    - Test data Accuracy = 10.72
 - advi-bnn-MNIST.pkl
-    - Test data Accuracy =
-- nuts-bnn-CIFAR10.pkl
-    - Test data Accuracy = 
+  - Test data Accuracy = 94.38%
+- advi-bnn-CIFAR10.pkl
+  - Test data Accuracy = 19.15%
+  - Test data Accuracy(Grayscale) = 31.34%
 - nuts-bnn-MNIST.pkl
-    - Test data Accuracy = 
+  - Test data Accuracy = 
+- nuts-bnn-CIFAR10.pkl
+  - Test data Accuracy = 
+
+- advi-bcnn-MNIST.pkl
+  - Test data Accuracy = 
+- advi-bcnn-CIFAR10.pkl
+  - Test data Accuracy = 
+- nuts-bcnn-MNIST.pkl
+  - Test data Accuracy = 
+- nuts-bcnn-CIFAR10.pkl
+  - Test data Accuracy = 

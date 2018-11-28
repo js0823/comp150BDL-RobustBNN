@@ -3,6 +3,7 @@ import sys, os
 import keras
 from keras.datasets import cifar10
 from keras.datasets import mnist
+
 '''
 # TODO: We can use sklearn or keras to get datasets and not download the files.
 def load_MNIST_dataset():
@@ -51,13 +52,29 @@ def load_MNIST_dataset():
 
     # We just return all the arrays in order, as expected in main().
     # (It doesn't matter how we do this as long as we can read them again.)
-    return X_train, y_train, X_val, y_val, X_test, y_test
+    return X_train, y_train, X_test, y_test
 '''
 
 def load_MNIST_dataset():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    x_train = x_train / np.float32(256)
+    x_test = x_test / np.float32(256)
     return x_train, y_train, x_test, y_test
 
 def load_CIFAR10_dataset():
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-    return x_train, y_train, x_test, y_test
+    x_train = x_train / np.float32(256)
+    x_test = x_test / np.float32(256)
+
+    def grayscale(data, dtype='float32'):
+        # luma coding weighted average in video systems
+        r, g, b = np.asarray(.3, dtype=dtype), np.asarray(.59, dtype=dtype), np.asarray(.11, dtype=dtype)
+        rst = r * data[:, :, :, 0] + g * data[:, :, :, 1] + b * data[:, :, :, 2]
+        # add channel dimension
+        rst = np.expand_dims(rst, axis=3)
+        return rst
+    
+    x_train_gray = grayscale(x_train)
+    x_test_gray = grayscale(x_test)
+
+    return x_train_gray, y_train, x_test_gray, y_test

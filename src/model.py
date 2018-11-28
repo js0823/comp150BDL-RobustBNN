@@ -8,7 +8,13 @@ import theano.tensor as T
 import loaddata
 import math
 
-def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False):
+# For Bayesian CNN
+import keras
+from keras.models import Sequential
+from keras.layers.core import Activation
+from keras.layers import Input, Dense, Conv2D, Flatten, MaxPooling2D
+
+def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False, init=GaussWeights()):
 	if conv is False: # Create BNN
 		# Initialize random weights between each layer
 		init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
@@ -20,7 +26,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		init_b_2 = np.random.randn(n_hidden).astype(floatX)
 		init_b_out = np.random.randn(1).astype(floatX)
 		
-		with pm.Model() as neural_network:
+		with pm.Model() as model:
 			# Weights from input to hidden layer
 			weights_in_1 = pm.Normal('w_in_1', mu=mean, sd=math.sqrt(var/n_hidden),
 									shape=(X_train.shape[1], n_hidden),
@@ -39,7 +45,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			weights_in_b2 = pm.Normal('b_2', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden), testval=init_b_2)
 			
-			# Weights from hidden layer to output
+			# Weights from 2nd layer to output
 			weights_2_out = pm.Normal('w_2_out', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(n_hidden, 10), testval=init_out)
 
@@ -56,15 +62,39 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 	
 	else: # Bayesian Convolutional neural network (Lenet)
 
-		# For CNN, we are taking 2D image, not 1D image.
-		from keras.models import Sequential
-		from keras.layers import Dense, Conv2D, Flatten
-
 		model = Sequential()
-		model.add(Conv2D(64, kernel_size=3, activation='relu', input_shape=(X_train.shape[1], n_hidden)))
-		model.add(Conv2D(32, kernel_size=3, activation='relu'))
+		# first set of CONV => RELU => POOL
+		model.add(Conv2D(20, kernel_size=(3, 3), padding="same", activation='relu',
+							input_shape=(X_train.shape[1], X_train.shape[2], 1)))
+		model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+		# second set of CONV => RELU => POOL
+		model.add(Conv2D(50, kernel_size=(5, 5), activation='relu'))
+		model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+
+		# set of FC => RELU layers
 		model.add(Flatten())
-		model.add(Dense(10, activation='softmax'))
-        
-	return neural_network
+		model.add(Dense(500))
+		model.add(Activation("relu"))
+
+		# softmax classifier
+		model.add(Dense(10))
+		model.add(Activation("softmax"))
+
+		with pm.Model() as model:
+			i = Input(tensor=nn_input, shape=(X_train.shape[1], X_train.shape[2]))
+			layer1 = Conv2D(20, kernel_initializer=init, activation='relu')(i)
+			layer2 = MaxPooling2D()
 		
+		# TODO: I think I need to use lasagne. See bayesian_cnn.py
+	
+	return model
+# For adding gaussian weights to Bayesian CNN
+class GaussWeights(object):
+    def __init__(self):
+        self.count = 0
+    def __call__(self, shape):
+        self.count += 1
+        return pm.Normal('w%d' % self.count, mu=0, sd=.1,
+                         testval=np.random.normal(size=shape).astype(np.float64),
+                         shape=shape)

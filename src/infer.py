@@ -28,7 +28,7 @@ def train_model(inference_alg, model, num_posterior, nn_input, nn_output, X_trai
 		minibatch_y = pm.Minibatch(Y_train.astype(floatX), batch_size=500)
 		with model:
 			inference = pm.ADVI()
-			approx = pm.fit(n=50000, method=inference, more_replacements={nn_input:minibatch_x, nn_output:minibatch_y})
+			approx = pm.fit(n=300000, method=inference, more_replacements={nn_input:minibatch_x, nn_output:minibatch_y})
 			#db = pm.backends.Text('advi-backend')
 			trace = approx.sample(draws=num_posterior)
 

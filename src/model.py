@@ -14,6 +14,16 @@ from keras.models import Sequential
 from keras.layers.core import Activation
 from keras.layers import Input, Dense, Conv2D, Flatten, MaxPooling2D
 
+# For adding gaussian weights to Bayesian CNN
+class GaussWeights(object):
+    def __init__(self):
+        self.count = 0
+    def __call__(self, shape):
+        self.count += 1
+        return pm.Normal('w%d' % self.count, mu=0, sd=.1,
+                         testval=np.random.normal(size=shape).astype(np.float64),
+                         shape=shape)
+
 def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False, init=GaussWeights()):
 	if conv is False: # Create BNN
 		# Initialize random weights between each layer
@@ -89,12 +99,3 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		# TODO: I think I need to use lasagne. See bayesian_cnn.py
 	
 	return model
-# For adding gaussian weights to Bayesian CNN
-class GaussWeights(object):
-    def __init__(self):
-        self.count = 0
-    def __call__(self, shape):
-        self.count += 1
-        return pm.Normal('w%d' % self.count, mu=0, sd=.1,
-                         testval=np.random.normal(size=shape).astype(np.float64),
-                         shape=shape)

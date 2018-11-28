@@ -29,7 +29,7 @@ Current Data
   - Test data Accuracy = 19.15%
   - Test data Accuracy(Grayscale) = 31.34%
 - nuts-bnn-MNIST.pkl
-  - Test data Accuracy = 
+  - Test data Accuracy = 46.32%
 - nuts-bnn-CIFAR10.pkl
   - Test data Accuracy = 
 

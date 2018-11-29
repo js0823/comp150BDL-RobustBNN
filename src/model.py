@@ -7,6 +7,7 @@ import numpy as np
 import theano.tensor as T
 import loaddata
 import math
+import lasagne
 
 # For Bayesian CNN
 import keras
@@ -92,6 +93,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		model.add(Activation("softmax"))
 		'''
 
+		'''
 		with pm.Model() as model:
 			i = Input(tensor=nn_input, shape=(X_train.shape[1], X_train.shape[2]))
 			layer1 = Conv2D(20, kernel_size=(5, 5), kernel_initializer=init, activation='relu')(i)
@@ -106,7 +108,22 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			dense2 = Dense(10, kernel_initializer=init, activation='softmax')(dense1)
 
 			out = pm.Categorical('out', dense2, observed=nn_output, total_size=Y_train.shape[0])
+		'''
 		
 		# TODO: I think I need to use lasagne. See bayesian_cnn.py
+		with pm.Model() as model:
+			network = lasagne.layers.InputLayer(input_var=nn_input, shape=(None, 1, X_train.shape[1], X_train.shape[2]))
+			network = lasagne.layers.Conv2DLayer(network, num_filters=20, filter_size=(5, 5), b=init, W=init)
+			network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2), stride=(2, 2))
+
+			network = lasagne.layers.Conv2DLayer(network, num_filters=50, filter_size=(5, 5), b=init, W=init)
+			network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2), stride=(2, 2))
+
+			network = lasagne.layers.FlattenLayer(network)
+			network = lasagne.layers.DenseLayer(network, 500, b=init, W=init)
+			network = lasagne.layers.DenseLayer(network, 10, b=init, W=init, nonlinearity=lasagne.nonlinearities.softmax)
+			prediction = lasagne.layers.get_output(network)
+
+			out = pm.Categorical('out', prediction, observed=nn_output, total_size=Y_train.shape[0])
 	
 	return model

@@ -31,7 +31,7 @@ Current Data
 - nuts-bnn-MNIST.pkl
   - Test data Accuracy = 46.32%
 - nuts-bnn-CIFAR10.pkl
-  - Test data Accuracy = 
+  - Test data Accuracy = 41.44%
 
 - advi-bcnn-MNIST.pkl
   - Test data Accuracy = 

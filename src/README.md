@@ -27,7 +27,7 @@ Current Data
   - Test data Accuracy = 94.38%
 - advi-bnn-CIFAR10.pkl
   - Test data Accuracy = 19.15%
-  - Test data Accuracy(Grayscale) = 31.34%
+  - Test data Accuracy(Grayscale) = 31.34% (Tried 300 neurons but that didn't help)
 - nuts-bnn-MNIST.pkl
   - Test data Accuracy = 46.32%
 - nuts-bnn-CIFAR10.pkl

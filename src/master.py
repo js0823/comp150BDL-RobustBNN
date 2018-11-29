@@ -46,7 +46,10 @@ def run_config(modeltype, inference_alg, data):
 	nn_output = theano.shared(Y_train.astype(floatX))
 
 	# Get neural network model
-	nn = model.create_NN(h_layer_size, mean, var, nn_input, nn_output, X_train, Y_train)
+	if modeltype is 'bnn':
+		nn = model.create_NN(h_layer_size, mean, var, nn_input, nn_output, X_train, Y_train)
+	elif modeltype is 'bcnn':
+		nn = model.create_NN(h_layer_size, mean, var, nn_input, nn_output, X_train, Y_train, conv=True)
 
 	# Train the model
 	if inference_alg is 'advi':

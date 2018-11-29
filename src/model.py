@@ -7,7 +7,6 @@ import numpy as np
 import theano.tensor as T
 import loaddata
 import math
-import lasagne
 
 # For Bayesian CNN
 import keras
@@ -26,47 +25,6 @@ class GaussWeights(object):
                          shape=shape)
 
 def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False, init=GaussWeights()):
-
-	def build_bcnn(init):
-		l_in = lasagne.layers.InputLayer(shape=(None, 1, 28, 28),
-										input_var=nn_input)
-
-		# Add a fully-connected layer of 800 units, using the linear rectifier, and
-		# initializing weights with Glorot's scheme (which is the default anyway):
-		n_hid1 = 800
-		l_hid1 = lasagne.layers.DenseLayer(
-			l_in, num_units=n_hid1,
-			nonlinearity=lasagne.nonlinearities.tanh,
-			b=init,
-			W=init
-		)
-
-		n_hid2 = 800
-		# Another 800-unit layer:
-		l_hid2 = lasagne.layers.DenseLayer(
-			l_hid1, num_units=n_hid2,
-			nonlinearity=lasagne.nonlinearities.tanh,
-			b=init,
-			W=init
-		)
-
-		# Finally, we'll add the fully-connected output layer, of 10 softmax units:
-		l_out = lasagne.layers.DenseLayer(
-			l_hid2, num_units=10,
-			nonlinearity=lasagne.nonlinearities.softmax,
-			b=init,
-			W=init
-		)
-		
-		prediction = lasagne.layers.get_output(l_out)
-		
-		# 10 discrete output classes -> pymc3 categorical distribution
-		out = pm.Categorical('out', 
-							prediction,
-							observed=target_var)
-		
-		return out
-
 	if conv is False: # Create BNN
 		# Initialize random weights between each layer
 		init_1 = np.random.randn(X_train.shape[1], n_hidden).astype(floatX)
@@ -134,7 +92,6 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		model.add(Activation("softmax"))
 		'''
 
-		'''
 		with pm.Model() as model:
 			i = Input(tensor=nn_input, shape=(X_train.shape[1], X_train.shape[2]))
 			layer1 = Conv2D(20, kernel_size=(5, 5), kernel_initializer=init, activation='relu')(i)
@@ -149,7 +106,6 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			dense2 = Dense(10, kernel_initializer=init, activation='softmax')(dense1)
 
 			out = pm.Categorical('out', dense2, observed=nn_output, total_size=Y_train.shape[0])
-		'''
 		
 		# TODO: I think I need to use lasagne. See bayesian_cnn.py
 	

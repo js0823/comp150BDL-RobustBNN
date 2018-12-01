@@ -1,4 +1,5 @@
 import pickle
+import numpy as np
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -6,47 +7,94 @@ from keras.layers import Conv2D, MaxPooling2D
 import keras
 
 class BNN:
-    def __init__(self, path=None, ISMNIST=True, num_labels=10, LeNet=True):
+    def __init__(self, path=None, ISMNIST=True, num_labels=10, LeNet=False,
+                 num_samples=50, burnin=100):
+        """
+        Creates a BNN from a set of posterior samples stored as a PyMC3 
+        Multitrace object, allowing for predictions and an interface that
+        complements Carlini's attack algorithm code. Note that the returned
+        Keras models do not perform the softmax activation on the final layer.
+        
+        Args:
+        - path: String filename for a pickled multitrace object
+        - ISMNIST: Whether the model is classifying MNIST, only relevant if
+        the model requested is LeNet (i.e. LeNet=True).
+        - num_labels: Number of labels (default=10)
+        - LeNet: Boolean for whether we trained a LeNet model (default=False)
+        - num_samples: Number of posterior samples to use for BNN (default=50)
+        - burnin: Length of burn-in phase, key in MCMC inference (default=100)
+        """
         self.num_channels = 1 if ISMNIST else 3
         self.image_size = 28 if ISMNIST else 32
         self.num_labels = num_labels
 
         with open(path, 'rb') as f:
-            posteriors = pickle.load(f)
-            models = ([create_lenet(p, ISMNIST) for p in posteriors] if LeNet 
-                        else [create_model(p) for p in posteriors])
-
-        
+            # Randomly choose posterior samples after burnin phase
+            # and create a Keras model for each
+            trace = pickle.load(f)['trace']
+            ids = np.random.choice(range(burnin, len(trace)), 
+                                          num_samples, replace=False)
+            models = ([create_lenet(trace.point(i), ISMNIST) for i in ids]
+                     if LeNet else [create_model(trace.point(i)) for i in ids])
+            
         def average_preds(x):
+            """
+            Takes in some data x and returns averaged predictions of posteriors
+            as a TF tensor.
+
+            Args:
+            - x: Observations as a Numpy array
+            """
             preds = np.mean([model.predict(x) for model in models])
             return tf.convert_to_tensor(preds)
 
-        self.model = keras.core.layers.Lambda(average_preds)
+        # Save model as the average_preds function as a Keras layer, and
+        # the model list as all the posteriors as Keras models.
+        model = Sequential()
+        shape = (self.num_channels * self.image_size**2)
+        model.add(keras.layers.core.Lambda(average_preds, output_shape=(num_labels,)))
+        self.model = model
         self.model_list = models
     
     def predict(self, data):
+        """ Prediction function that wraps average_preds for convenience. """
         return self.model(data)
 
 
 def create_model(weights):
+    """
+    Given a set of weights, constructs a simple BNN with only dense layers.
+    Returns a Keras model.
+
+    Args:
+    - weights: A dict with layer names as keys and Numpy arrays of float 
+    weights as values.
+    """
     model = Sequential()
     num_layers = len(weights)
     layers = []
     
-    for i, (layer, data) in enumerate(weights.items()):
+    # We will infer NN architecture from the shapes of the weight arrays.
+    for i, (name, data) in enumerate(list(weights.items())[0::2]):
+        
+        # Set input_dims only for the first layer
         if i == 0:
             input_dim = data.shape[0]
-            layers.append(Dense(data.shape[1], input_dim=input_dim))
+            layers.append(Dense(data.shape[1], name=name, input_dim=input_dim))
             layers.append(Activation('tanh'))
         else:
-            model.add(Dense(data.shape[1]))
-            if i != num_layers - 1:
+            layers.append(Dense(data.shape[1], name=name))
+            
+            # Only add an activation if it's not the last layer
+            if i != num_layers//2 - 1:
                 layers.append(Activation('tanh'))
 
+    # Construct model architecture
     for layer in layers:
         model.add(layer)
     
-    model.set_weights(weights.values())
+    # Initialize model weights
+    model.set_weights(list(weights.values()))
     return model
 
 def create_lenet(weights, ISMNIST):
@@ -71,14 +119,21 @@ def create_lenet(weights, ISMNIST):
     return model
 
 def check_model_dims(path):
-    with open(path, 'rb') as f:
-        trace = pickle.load(f)
-        for x in trace[0]:
-            for i in x.values():
-                print(i.shape)
+    """
+    Small test function to check the dimensions of the weight arrays for
+    a posterior sample. Prints out the shapes of one posterior.
 
-# if __name__ == '__main__':
-#   with open('example_trace.pkl', 'rb') as f:
-#       trace = pickle.load(f)
-#       models = theano_to_keras(trace)
-#       print(models)
+    Args:
+    - path: String filename, assumed to be a pickled Multitrace object
+    """
+    with open(path, 'rb') as f:
+        trace = pickle.load(f)['trace']
+        one_iter = trace.point(40)
+        for arr in list(one_iter.values()):
+            print(arr.shape)
+
+if __name__ == '__main__':
+    path = 'advi-bnn-MNIST-cpurun.pkl'
+    BNN = BNN(path)
+    fake_data = np.random.rand(784,64)
+    print(BNN.predict(fake_data))

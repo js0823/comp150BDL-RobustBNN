@@ -1,8 +1,8 @@
 import pickle
 import numpy as np
 import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.models import Sequential, Model
+from keras.layers import Dense, Dropout, Activation, Flatten, average, Input
 from keras.layers import Conv2D, MaxPooling2D
 import keras
 
@@ -37,22 +37,24 @@ class BNN:
             models = ([create_lenet(trace.point(i), ISMNIST) for i in ids]
                      if LeNet else [create_model(trace.point(i)) for i in ids])
             
-        def average_preds(x):
+        def average_preds(models, data):
             """
-            Takes in some data x and returns averaged predictions of posteriors
-            as a TF tensor.
+            Takes in a list of posterior samples and data as a Numpy array
+            and returns a Keras model instance that averages the input models'
+            predictions.
 
             Args:
-            - x: Observations as a Numpy array
+            - models: A list of Keras models
+            - data: Observations as a Numpy array
             """
-            preds = np.mean([model.predict(x) for model in models])
-            return tf.convert_to_tensor(preds)
+            preds = [model(data) for model in models]
+            avg = average(preds)
+            avg_model = Model(inputs=data, outputs=avg)
+            return avg_model
 
-        # Save model as the average_preds function as a Keras layer, and
-        # the model list as all the posteriors as Keras models.
-        model = Sequential()
-        shape = (self.num_channels * self.image_size**2)
-        model.add(keras.layers.core.Lambda(average_preds, output_shape=(num_labels,)))
+        # Save model returned by average_preds function as model
+        inp = Input(shape=(self.num_channels * self.image_size**2,))
+        model = average_preds(models, inp)
         self.model = model
         self.model_list = models
     
@@ -135,5 +137,8 @@ def check_model_dims(path):
 if __name__ == '__main__':
     path = 'advi-bnn-MNIST-cpurun.pkl'
     BNN = BNN(path)
-    fake_data = np.random.rand(784,64)
-    print(BNN.predict(fake_data))
+    fake_data = np.random.rand(64, 784)
+    model = BNN.model
+    models = BNN.model_list
+    print(model.summary())
+    print(model.predict(fake_data))

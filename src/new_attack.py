@@ -337,10 +337,13 @@ def test(Model, data, path):
     keras.backend.set_learning_phase(False)
     model = make_model(Model, dropout=False)
     model.load_weights(path)
+    print("Model type is: ", type(model))
 
     modeld = make_model(Model, dropout=True)
     modeld.load_weights(path)
 
+    print("Data type is: ", type(data.test_data))
+    print(data.test_data.shape)
     guess = model.predict(data.test_data)
     print(guess[:10])
     print('Accuracy without dropout',np.mean(np.argmax(guess,axis=1) == np.argmax(data.test_labels,axis=1)))
@@ -457,6 +460,6 @@ def test(Model, data, path):
 
 
 
-ISMNIST = False
-# test(MNISTModel, MNIST(), "models/mnist")
-test(CIFARModel, CIFAR(), "models/cifar")
+ISMNIST = True
+test(MNISTModel, MNIST(), "models/mnist")
+# test(CIFARModel, CIFAR(), "models/cifar")

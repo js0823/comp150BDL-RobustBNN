@@ -339,23 +339,19 @@ def differentable_u_multiple(models, data):
     
     return term1-term2
     
-def graybox(Model, data, path):
+def gray_box(clean_x, clean_y, path):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    model = make_model(Model, dropout=True, fixed=True)
-    model.load_weights(path)
-    pred = model.predict(data.test_data)
-    print('Accuracy with dropout on clean examples',np.mean(np.argmax(pred,axis=1) == np.argmax(data.test_labels,axis=1)))
+    BNN = BNN(path)
+    model = np.random.choice(BNN.model_list)
     sess = keras.backend.get_session()
-    N = 50
-    labs = get_labs(data.test_data[:N])
-    attack = CarliniL2(sess, Wrap(model), batch_size=N, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(model), batch_size=50, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=0)
     adv = attack.attack(data.test_data[:N], labs)
     return adv, model, labs
 
-def whitebox(Model, data, path):
+def white_box(Model, data, path):
     models = []
     sess = keras.backend.get_session()
     batch_size=50

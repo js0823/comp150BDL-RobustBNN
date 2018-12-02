@@ -137,7 +137,7 @@ def check_model_dims(path):
             print(arr.shape)
 
 if __name__ == '__main__':
-    path = 'advi-bnn-MNIST-cpurun.pkl'
+    path = 'pkls/advi-bnn-MNIST-cpurun.pkl'
     BNN = BNN(path)
     fake_data = np.random.rand(64, 784)
     model = BNN.model

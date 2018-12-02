@@ -3,10 +3,12 @@ Training:
 MC-Drop:
 - Tune learning rate
 - Tune dropout probability, find where it is in the code
+    -sends Dropout with p as arg into CIFARModel from setup_cifar.py
 
 Attack:
 - Figure out how to make attack untargeted -- what do we put in the
 labels argument? Do we need it?
+   - (set targeted to false and provide correct labels into labels argument)
 - Split up into gray box and white box attack
 - Tune hyperparameters of attack
 - Write a function to evaluate the accuracy of a model on adv. examples

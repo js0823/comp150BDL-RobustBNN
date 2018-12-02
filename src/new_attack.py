@@ -27,6 +27,11 @@ import sys
 sys.path.append("../..")
 from l2_attack import CarliniL2
 
+from glue import BNN
+import matplotlib
+import matplotlib.pyplot as plt
+from sklearn.metrics import auc
+
 def show(img):
     remap = "  .*#"+"#"*100
     img = (img.flatten()+.5)*3
@@ -296,6 +301,8 @@ def compute_u(sess, modeld, data):
     term1 = np.mean(np.sum(ys**2,axis=2),axis=1)
 
     term2 = np.sum(np.mean(ys,axis=1)**2,axis=1)
+    print("uncertainties")
+    print(term1 - term2)
 
     print('absolute mean uncertainty',np.mean(term1-term2))
     
@@ -332,6 +339,119 @@ def differentable_u_multiple(models, data):
     
     return term1-term2
     
+def graybox(Model, data, path):
+    #hyperparams = init_hp...
+    # model = Model.create_model()
+    model = make_model(Model, dropout=True, fixed=True)
+    model.load_weights(path)
+    pred = model.predict(data.test_data)
+    print('Accuracy with dropout on clean examples',np.mean(np.argmax(pred,axis=1) == np.argmax(data.test_labels,axis=1)))
+    sess = keras.backend.get_session()
+    N = 50
+    labs = get_labs(data.test_data[:N])
+    attack = CarliniL2(sess, Wrap(model), batch_size=N, max_iterations=10,#1000
+                       binary_search_steps=3, learning_rate=1e-1, initial_const=1,
+                       targeted=False, confidence=0)
+    adv = attack.attack(data.test_data[:N], labs)
+    return adv, model, labs
+
+def whitebox(Model, data, path):
+    models = []
+    sess = keras.backend.get_session()
+    batch_size=50
+    for _ in range(20):
+        m = make_model(Model, dropout=True, fixed=True)
+        m.load_weights(path)
+        models.append(m)
+    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=batch_size, binary_search_steps=4,
+                           initial_const=1, max_iterations=10, confidence=1, #1000 iters
+                           targeted=False, abort_early=False, learning_rate=1e-1)
+    labs = get_labs(data.test_data[:batch_size])
+    adv = attack.attack(data.test_data[:batch_size], labs)
+    return adv, models, labs
+        # guess = modeld.predict(adv)
+        #differentiable_u_multiple?
+
+def eval_model(Model, data, adv):
+    #Accuracy measurements
+    adv_x, adv_labs = adv
+    sess = keras.backend.get_session()
+    # print(type(adv_x))
+    # print(adv_x.shape)
+    # print(type(data.test_data))
+    # print(data.test_data.shape)
+    preds = model.predict(data.test_data)
+    # clean_acc = np.mean(np.argmax(preds,axis=1) == np.argmax(data.test_labels,axis=1))
+    print('Accuracy on clean examples',np.mean(np.argmax(preds,axis=1) == np.argmax(data.test_labels,axis=1)))
+    a = len(adv_x)  
+    adv_preds = model.predict(adv_x)
+    # adv_acc = np.mean(np.argmax(adv_preds,axis=1) == np.argmax(adv_labs,axis=1))
+    print('Accuracy on adversarial examples',np.mean(np.argmax(adv_preds,axis=1) == np.argmax(adv_labs,axis=1)))
+    # avg_distortion = np.mean(np.sum((data.test_data[:a]-adv_x)**2,axis=(1,2,3))**.5)
+    print('average distortion',np.mean(np.sum((data.test_data[:a]-adv_x)**2,axis=(1,2,3))**.5))
+    print("Test data")
+    clean_uncertanties = compute_u(sess, model, data.test_data[:a])
+    print("Adversarial examples")
+    adv_uncertainties = compute_u(sess, model, adv_x)
+
+    roc_auc(clean_uncertanties, adv_uncertainties)
+
+    #plot
+
+    # class_sums = np.zeros(len(preds_probs[0]))
+    # for c in range(10):
+    #     p_hat = np.mean(preds_probs[:,:,c], axis = 0).flatten()
+    #     model_sums = []
+    #     #for every example get p_ij sum term
+    #     for i in range(len(preds_probs[0])):
+    #         p_ijs = preds_probs[:,i,c]
+    #         model_sums.append(np.sum(np.square(p_ijs))/float(len(preds_probs)))
+    #     class_sums += (np.asarray(model_sums) - np.square(p_hat))
+    # uncertainties = class_sums / 10.0
+
+    #ROC-AUC curve on adv and clean
+
+def roc_auc(clean_us, adv_us):
+    uncertainties = np.concatenate((np.stack((clean_us, np.zeros(len(clean_us))),axis=-1), np.stack((adv_us, np.ones(len(adv_us))),axis=-1)))
+    # print(uncertainties)
+    x_spacing = 0.1
+    uncertainties = np.sort(uncertainties, axis=0)[::-1]
+    print("Sorted uncertainties: \n{}".format(uncertainties))
+    min_u = uncertainties[len(uncertainties)-1][0]
+    max_u = uncertainties[0][0]
+    u_range = max_u - min_u
+    us = np.linspace(max_u, min_u, 50)
+    # print("us: {}".format(us))
+    TPRs = []
+    FPRs = []
+    i = 0
+    FP = 0
+    TP = 0
+    num_clean = (float)(len(clean_us))
+    num_adv = (float)(len(adv_us))
+    for u in us:
+        # print("u: {} i: {} val: {}".format(u,i,uncertainties[i][0]))
+        while uncertainties[i][0] > u:
+            if uncertainties[i][1] == 0:
+                FP += 1
+            else:
+                TP += 1
+            i += 1
+        # print("TP: {} FP: {}".format(TP,FP))
+        TPRs.append(TP/num_adv)
+        FPRs.append(FP/num_clean)
+    print("TPRS: \n{}".format(TPRs))
+    print("FPRS: \n{}".format(FPRs))
+    plt.plot(FPRs + [1.0], TPRs + [1.0])
+    plt.title("ROC Curve")
+    plt.xlabel("FPR")
+    plt.ylabel("TPR")
+    plt.show()
+    auc_val = auc(FPRs, TPRs)
+    print("auc_val: {}".format(auc_val))
+
+
+
 
 def test(Model, data, path):
     keras.backend.set_learning_phase(False)
@@ -459,7 +579,23 @@ def test(Model, data, path):
     plt.show()
 
 
-
-ISMNIST = True
-test(MNISTModel, MNIST(), "models/mnist")
+##BNN.create_model equiv to make_model.. model() = average_preds... self.model_list() = actual posteriors
+# test(MNISTModel, MNIST(), "models/mnist")
 # test(CIFARModel, CIFAR(), "models/cifar")
+
+if __name__ == "__main__":
+    # Bnn = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
+    # print(Bnn)
+    ISMNIST = True
+    Model = MNISTModel
+    data = MNIST()
+    path = "models/mnist"
+    adv_graybox, model, labs = graybox(Model, data, path)
+    adv_whitebox, models, labs = whitebox(Model, data, path)
+    print("graybox")
+    eval_model([model], data, (adv_graybox, labs))
+    print("whitebox")
+    eval_model(models, data, (adv_whitebox, labs))
+    # print("graybox examples: {}".format(adv_graybox))
+    # print("whitebox exampls: {}".format(adv_whitebox))
+    # test(MNISTModel, MNIST(), "models/mnist")

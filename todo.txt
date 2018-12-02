@@ -1,16 +1,9 @@
 Training:
-- Spin up LeNet in Theano/Keras
-- Scale variance down for each weight
-- Train it with ADVI
-- Train it with NUTS
 
 MC-Drop:
 - Tune learning rate
 - Tune dropout probability, find where it is in the code
     -sends Dropout with p as arg into CIFARModel from setup_cifar.py
-
-Glue:
-- Make glue code compatible with LeNet
 
 Attack:
 - Figure out how to make attack untargeted -- what do we put in the

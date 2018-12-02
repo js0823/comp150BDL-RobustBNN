@@ -1,16 +1,22 @@
 import pymc3 as pm
 import theano
 import pickle
+import os
 floatX = theano.config.floatX
 from scipy.stats import mode
 
-def save_posterior(model, trace, filename):
+def save_trace(model, trace, filename):
 	with open(filename, 'wb') as buff:
 		#pickle.dump({'model': model, 'trace': trace}, buff)
-		pickle.dump({'trace': trace}, buff)
+		pickle.dump(trace, buff)
 	print("Saving model and trace done.")
 
-def load_posterior(filename):
+def save_trace2(model, trace, filename):
+	with open(filename, 'wb') as buff:
+		theano.misc.pkl_utils.dump(trace, buff)
+	print("Saving model and trace done.")
+
+def load_trace(filename):
 	with open(filename, 'rb') as buff:
 		data = pickle.load(buff)
 	

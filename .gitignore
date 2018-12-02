@@ -129,3 +129,4 @@ gpu.txt
 pip-selfcheck.json
 pyvenv.cfg
 *.pkl
+*.zip

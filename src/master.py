@@ -10,8 +10,8 @@ from sklearn.metrics import accuracy_score
 
 ###################### Configurations ########################
 inference_alg = 'advi'  # Can be advi, nuts
-modeltype = 'bcnn' # can be bnn or bcnn
-data = 'MNIST' # can be MNIST or CIFAR10
+modeltype = 'bnn' # can be bnn or bcnn
+data = 'CIFAR10' # can be MNIST or CIFAR10
 h_layer_size = 50
 mean = 0
 var = 1
@@ -19,7 +19,7 @@ nPosterior_samples = 200
 ##############################################################
 
 def run_config(modeltype, inference_alg, data):
-	trace_save_filename = inference_alg + '-' + modeltype + '-' + data + '.pkl'
+	trace_save_filename = inference_alg + '-' + modeltype + '-' + data + '.zip'
 	print('Saved trace name will be ' + str(trace_save_filename))
 
 	if modeltype is 'bnn': # model is BNN
@@ -57,7 +57,7 @@ def run_config(modeltype, inference_alg, data):
 	elif inference_alg is 'nuts':
 		pred_test, trace = infer.train_model('nuts', nn, nPosterior_samples, nn_input, nn_output, X_train, Y_train, X_test, Y_test)
 	
-	infer.save_posterior(nn, trace, trace_save_filename)
+	infer.save_trace(nn, trace, trace_save_filename)
 	
 	accuracies = accuracy_score(Y_test, pred_test)
 

@@ -338,6 +338,7 @@ def differentable_u_multiple(models, data):
     term2 = tf.reduce_sum(tf.reduce_mean(ys,axis=1)**2,axis=1)
     
     return term1-term2
+
     
 def gray_box(clean_x, clean_y, path):
     #hyperparams = init_hp...
@@ -349,7 +350,7 @@ def gray_box(clean_x, clean_y, path):
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=0)
     adv = attack.attack(data.test_data[:N], labs)
-    return adv, model, labs
+    return adv
 
 def white_box(Model, data, path):
     models = []

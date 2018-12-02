@@ -343,13 +343,13 @@ def differentable_u_multiple(models, data):
 def gray_box(clean_x, clean_y, path):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    BNN = BNN(path)
-    model = np.random.choice(BNN.model_list)
+    posteriors = BNN(path)
+    single_model = np.random.choice(posteriors.model_list)
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(model), batch_size=50, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=50, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=0)
-    adv = attack.attack(data.test_data[:N], labs)
+    adv = attack.attack(clean_x, clean_y)
     return adv
 
 def white_box(Model, data, path):
@@ -584,15 +584,17 @@ if __name__ == "__main__":
     # Bnn = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
     # print(Bnn)
     ISMNIST = True
-    Model = MNISTModel
+    # Model = MNISTModel
     data = MNIST()
-    path = "models/mnist"
-    adv_graybox, model, labs = graybox(Model, data, path)
-    adv_whitebox, models, labs = whitebox(Model, data, path)
+    path = "pkls/advi-bnn-MNIST-cpurun.pkl"
+    clean_x = data.test_data[:50]
+    clean_y = data.test_labels[:50]
+    adv_graybox = gray_box(clean_x, clean_y, path)
+    # adv_whitebox, models, labs = whitebox(Model, data, path)
     print("graybox")
-    eval_model([model], data, (adv_graybox, labs))
-    print("whitebox")
-    eval_model(models, data, (adv_whitebox, labs))
+    eval_model([model], data, (adv_graybox, clean_y))
+    # print("whitebox")
+    # eval_model(models, data, (adv_whitebox, labs))
     # print("graybox examples: {}".format(adv_graybox))
     # print("whitebox exampls: {}".format(adv_whitebox))
     # test(MNISTModel, MNIST(), "models/mnist")

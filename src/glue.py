@@ -99,6 +99,7 @@ def create_model(weights):
     model.set_weights(list(weights.values()))
     return model
 
+
 def create_lenet(weights, ISMNIST):
     model = Sequential()
     input_shape = (28, 28, 1) if ISMNIST else (32,32,3)
@@ -119,6 +120,7 @@ def create_lenet(weights, ISMNIST):
     # print(model.summary())
     model.set_weights(weights.values())
     return model
+
 
 def check_model_dims(path):
     """

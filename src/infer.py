@@ -11,7 +11,7 @@ def save_trace(trace, filename):
 		pickle.dump(trace, buff)
 	print("Saving model and trace done.")
 
-# Theano version. Not working
+# Theano version. Not working. pkl_utils doesn't exist.
 def save_trace2(trace, filename):
 	with open(filename, 'wb') as buff:
 		theano.misc.pkl_utils.dump(trace, buff)
@@ -35,7 +35,7 @@ def train_model(inference_alg, model, num_posterior, nn_input, nn_output, X_trai
 		minibatch_y = pm.Minibatch(Y_train.astype(floatX), batch_size=500)
 		with model:
 			inference = pm.ADVI()
-			approx = pm.fit(n=50000, method=inference,
+			approx = pm.fit(n=200000, method=inference,
 								more_replacements={nn_input:minibatch_x, nn_output:minibatch_y})
 			trace = approx.sample(draws=num_posterior)
 

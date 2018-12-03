@@ -35,7 +35,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		# Initialize random biases in each layer
 		init_b_1 = np.random.randn(n_hidden).astype(floatX)
 		init_b_2 = np.random.randn(n_hidden).astype(floatX)
-		init_b_out = np.random.randn(1).astype(floatX)
+		init_b_out = np.random.randn(10).astype(floatX)
 		
 		with pm.Model() as model:
 			# Weights from input to hidden layer

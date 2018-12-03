@@ -324,7 +324,7 @@ def differentable_u(modeld, data, count):
     
     return term1-term2
 
-def differentable_u_multiple(models, data):
+def differentiable_u_multiple(models, data):
 
     ys = []
     for model in models:
@@ -338,24 +338,25 @@ def differentable_u_multiple(models, data):
     term2 = tf.reduce_sum(tf.reduce_mean(ys,axis=1)**2,axis=1)
     
     return term1-term2
+
+
+def create_filename(dataset, inf, threat, content):
+    return dataset + '_' + inf + '_' + threat + '_' + content + '.pkl' 
     
-def graybox(Model, data, path):
+    
+def gray_box(clean_x, clean_y, path):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    model = make_model(Model, dropout=True, fixed=True)
-    model.load_weights(path)
-    pred = model.predict(data.test_data)
-    print('Accuracy with dropout on clean examples',np.mean(np.argmax(pred,axis=1) == np.argmax(data.test_labels,axis=1)))
+    posteriors = BNN(path)
+    single_model = np.random.choice(posteriors.model_list)
     sess = keras.backend.get_session()
-    N = 50
-    labs = get_labs(data.test_data[:N])
-    attack = CarliniL2(sess, Wrap(model), batch_size=N, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=50, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=0)
-    adv = attack.attack(data.test_data[:N], labs)
-    return adv, model, labs
+    adv = attack.attack(clean_x, clean_y)
+    return adv
 
-def whitebox(Model, data, path):
+def white_box(Model, data, path):
     models = []
     sess = keras.backend.get_session()
     batch_size=50
@@ -372,30 +373,19 @@ def whitebox(Model, data, path):
         # guess = modeld.predict(adv)
         #differentiable_u_multiple?
 
-def eval_model(Model, data, adv):
+def eval_model(model, clean_x, clean_y, adv):
     #Accuracy measurements
-    adv_x, adv_labs = adv
     sess = keras.backend.get_session()
-    # print(type(adv_x))
-    # print(adv_x.shape)
-    # print(type(data.test_data))
-    # print(data.test_data.shape)
-    preds = model.predict(data.test_data)
-    # clean_acc = np.mean(np.argmax(preds,axis=1) == np.argmax(data.test_labels,axis=1))
-    print('Accuracy on clean examples',np.mean(np.argmax(preds,axis=1) == np.argmax(data.test_labels,axis=1)))
-    a = len(adv_x)  
     adv_preds = model.predict(adv_x)
-    # adv_acc = np.mean(np.argmax(adv_preds,axis=1) == np.argmax(adv_labs,axis=1))
-    print('Accuracy on adversarial examples',np.mean(np.argmax(adv_preds,axis=1) == np.argmax(adv_labs,axis=1)))
-    # avg_distortion = np.mean(np.sum((data.test_data[:a]-adv_x)**2,axis=(1,2,3))**.5)
-    print('average distortion',np.mean(np.sum((data.test_data[:a]-adv_x)**2,axis=(1,2,3))**.5))
-    print("Test data")
-    clean_uncertanties = compute_u(sess, model, data.test_data[:a])
-    print("Adversarial examples")
-    adv_uncertainties = compute_u(sess, model, adv_x)
-
-    roc_auc(clean_uncertanties, adv_uncertainties)
-
+    adv_acc = np.mean(np.argmax(adv_preds,axis=1) == np.argmax(clean_y,axis=1))
+    dist = np.mean([np.linalg.norm(clean_x[i]-adv[i]) for i in len(clean_x)])
+    models = model.model_list
+    clean_unc = differentiable_u_multiple(models, clean_x)
+    adv_unc = differentiable_u_multiple(models, adv)
+    roc_auc(clean_unc, adv_unc)
+    print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
+          tf.mean(clean_unc), tf.mean(adv_unc))
+    return adv_acc, dist, (clean_unc, adv_unc)
     #plot
 
     # class_sums = np.zeros(len(preds_probs[0]))
@@ -587,15 +577,17 @@ if __name__ == "__main__":
     # Bnn = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
     # print(Bnn)
     ISMNIST = True
-    Model = MNISTModel
+    # Model = MNISTModel
     data = MNIST()
-    path = "models/mnist"
-    adv_graybox, model, labs = graybox(Model, data, path)
-    adv_whitebox, models, labs = whitebox(Model, data, path)
+    path = "pkls/advi-bnn-MNIST-cpurun.pkl"
+    clean_x = data.test_data[:50]
+    clean_y = data.test_labels[:50]
+    adv_graybox = gray_box(clean_x, clean_y, path)
+    # adv_whitebox, models, labs = whitebox(Model, data, path)
     print("graybox")
-    eval_model([model], data, (adv_graybox, labs))
-    print("whitebox")
-    eval_model(models, data, (adv_whitebox, labs))
+    eval_model([model], data, (adv_graybox, clean_y))
+    # print("whitebox")
+    # eval_model(models, data, (adv_whitebox, labs))
     # print("graybox examples: {}".format(adv_graybox))
     # print("whitebox exampls: {}".format(adv_whitebox))
     # test(MNISTModel, MNIST(), "models/mnist")

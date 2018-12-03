@@ -386,32 +386,15 @@ def eval_model(model, clean_x, clean_y, adv):
     print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
           tf.mean(clean_unc), tf.mean(adv_unc))
     return adv_acc, dist, (clean_unc, adv_unc)
-    #plot
-
-    # class_sums = np.zeros(len(preds_probs[0]))
-    # for c in range(10):
-    #     p_hat = np.mean(preds_probs[:,:,c], axis = 0).flatten()
-    #     model_sums = []
-    #     #for every example get p_ij sum term
-    #     for i in range(len(preds_probs[0])):
-    #         p_ijs = preds_probs[:,i,c]
-    #         model_sums.append(np.sum(np.square(p_ijs))/float(len(preds_probs)))
-    #     class_sums += (np.asarray(model_sums) - np.square(p_hat))
-    # uncertainties = class_sums / 10.0
-
-    #ROC-AUC curve on adv and clean
 
 def roc_auc(clean_us, adv_us):
     uncertainties = np.concatenate((np.stack((clean_us, np.zeros(len(clean_us))),axis=-1), np.stack((adv_us, np.ones(len(adv_us))),axis=-1)))
     # print(uncertainties)
-    x_spacing = 0.1
     uncertainties = np.sort(uncertainties, axis=0)[::-1]
-    print("Sorted uncertainties: \n{}".format(uncertainties))
     min_u = uncertainties[len(uncertainties)-1][0]
     max_u = uncertainties[0][0]
     u_range = max_u - min_u
     us = np.linspace(max_u, min_u, 50)
-    # print("us: {}".format(us))
     TPRs = []
     FPRs = []
     i = 0
@@ -420,25 +403,23 @@ def roc_auc(clean_us, adv_us):
     num_clean = (float)(len(clean_us))
     num_adv = (float)(len(adv_us))
     for u in us:
-        # print("u: {} i: {} val: {}".format(u,i,uncertainties[i][0]))
         while uncertainties[i][0] > u:
             if uncertainties[i][1] == 0:
                 FP += 1
             else:
                 TP += 1
             i += 1
-        # print("TP: {} FP: {}".format(TP,FP))
         TPRs.append(TP/num_adv)
         FPRs.append(FP/num_clean)
-    print("TPRS: \n{}".format(TPRs))
-    print("FPRS: \n{}".format(FPRs))
+    # print("TPRS: \n{}".format(TPRs))
+    # print("FPRS: \n{}".format(FPRs))
     plt.plot(FPRs + [1.0], TPRs + [1.0])
     plt.title("ROC Curve")
     plt.xlabel("FPR")
     plt.ylabel("TPR")
     plt.show()
     auc_val = auc(FPRs, TPRs)
-    print("auc_val: {}".format(auc_val))
+    # print("auc_val: {}".format(auc_val))
 
 
 
@@ -574,20 +555,50 @@ def test(Model, data, path):
 # test(CIFARModel, CIFAR(), "models/cifar")
 
 if __name__ == "__main__":
-    # Bnn = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
-    # print(Bnn)
-    ISMNIST = True
-    # Model = MNISTModel
-    data = MNIST()
-    path = "pkls/advi-bnn-MNIST-cpurun.pkl"
-    clean_x = data.test_data[:50]
-    clean_y = data.test_labels[:50]
-    adv_graybox = gray_box(clean_x, clean_y, path)
-    # adv_whitebox, models, labs = whitebox(Model, data, path)
-    print("graybox")
-    eval_model([model], data, (adv_graybox, clean_y))
-    # print("whitebox")
-    # eval_model(models, data, (adv_whitebox, labs))
-    # print("graybox examples: {}".format(adv_graybox))
-    # print("whitebox exampls: {}".format(adv_whitebox))
-    # test(MNISTModel, MNIST(), "models/mnist")
+    datasets = ["MNIST", "CIFAR"]
+    inf_methods = ["ADVI", "NUTS", "HMC", "MCDROP"]
+    colors = ["gray", "white"]
+    confs = [1,2,3,4]
+    for dataset, inf in zip(datasets, inf_methods):
+        if dataset == "MNIST":
+            data = MNIST()
+        else:
+            data = CIFAR()
+        #standardize naming of pkls between comps in some way
+        path = "pkls/" + dataset + "-" + inf + ".pkl"
+        model = BNN(path) 
+        clean_x = data.test_data[:50]
+        clean_y = data.test_labels[:50]
+        g_results = [[],[],[]]
+        w_results = [[],[],[]]
+        for conf in confs:
+            adv_gray_box = gray_box(clean_x, clean_y, path, conf)
+            adv_white_box = white_box(clean_x, clean_y, path, conf)
+            g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
+            w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
+            g_results[0].append(g_adv_acc)
+            g_results[1].append(g_dist)
+            g_results[2].append(g_uncs)
+            w_results[0].append(w_adv_acc)
+            w_results[1].append(w_dist)
+            w_results[2].append(w_uncs)
+        #save results in pkls
+        #create_filename(dataset, inf, "gray", content)
+        #create_filename(dataset, inf, "white", content)
+        #visualize adv examples
+        adv_ex_g = adv_gray_box[0]
+        adv_ex_w = adv_white_box[0]
+        if dataset == "MNIST":
+            plt.gray()
+            adv_ex_g = adv_ex_g.reshape([28,28])
+            adv_ex_w = adv_ex_w.reshape([28,28])
+        else:
+            #cifar10 images subtracted .5 in setup_cifar
+            #reshape(32,32,3)?
+            adv_ex_g += 0.5
+            adv_ex_w += 0.5
+        plt.imshow(adv_ex_g)
+        # plt.show()
+        plt.savefig(dataset + "_" + inf + "_gray_adv_visualization.png")
+        # plt.imshow(adv_ex_w)
+        # plt.savefig(dataset + "_" + inf + "_white_adv_visualization.png")

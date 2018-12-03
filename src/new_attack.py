@@ -11,7 +11,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
-from keras.utils import np_utils
+from keras.utils import np_utils, plot_model
 from keras.layers.core import Lambda
 from keras.callbacks import LearningRateScheduler
 from keras.optimizers import SGD
@@ -350,7 +350,7 @@ def gray_box(clean_x, clean_y, path):
     posteriors = BNN(path)
     single_model = np.random.choice(posteriors.model_list)
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=50, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=0)
     adv = attack.attack(clean_x, clean_y)
@@ -579,13 +579,17 @@ if __name__ == "__main__":
     ISMNIST = True
     # Model = MNISTModel
     data = MNIST()
-    path = "pkls/advi-bnn-MNIST-cpurun.pkl"
-    clean_x = data.test_data[:50]
-    clean_y = data.test_labels[:50]
-    adv_graybox = gray_box(clean_x, clean_y, path)
+    path = "advi-bnn-MNIST-cpurun.pkl"
+    model = BNN(path)
+    clean_x = data.test_data[:10].reshape(10, 784)
+    clean_y = data.test_labels[:10]
+    # print(model.model_list[0].summary())
+    # print(model.model_list[0].get_input_shape_at(1))
+    adv_gray_box = gray_box(clean_x, clean_y, path)
+
     # adv_whitebox, models, labs = whitebox(Model, data, path)
-    print("graybox")
-    eval_model([model], data, (adv_graybox, clean_y))
+    # print("graybox")
+    # adv_acc, dist, (clean_unc, adv_unc) = eval_model(model, clean_x, clean_y, adv_gray_box)
     # print("whitebox")
     # eval_model(models, data, (adv_whitebox, labs))
     # print("graybox examples: {}".format(adv_graybox))

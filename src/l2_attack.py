@@ -86,6 +86,7 @@ class CarliniL2:
         self.boxplus = (boxmin + boxmax) / 2.
         self.newimg = tf.tanh(modifier + self.timg) * self.boxmul + self.boxplus
         
+        print(self.newimg)
         # prediction BEFORE-SOFTMAX of the model
         self.output = model.predict(self.newimg)
         

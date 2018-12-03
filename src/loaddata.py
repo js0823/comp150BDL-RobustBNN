@@ -74,8 +74,17 @@ def load_CIFAR10_dataset():
         # add channel dimension
         rst = np.expand_dims(rst, axis=3)
         return rst
-    
-    x_train_gray = grayscale(x_train)
-    x_test_gray = grayscale(x_test)
 
-    return x_train_gray, y_train, x_test_gray, y_test
+    def one_hot_encode(x):
+        encoded = np.zeros((len(x), 10))
+    
+        for idx, val in enumerate(x):
+            encoded[idx][val] = 1
+        return encoded
+    
+    #x_train = grayscale(x_train)
+    #x_test = grayscale(x_test)
+    #y_test = one_hot_encode(y_test)
+    #y_train = one_hot_encode(y_train)
+
+    return x_train, y_train, x_test, y_test

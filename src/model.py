@@ -113,10 +113,10 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		# TODO: I think I need to use lasagne. See bayesian_cnn.py
 		with pm.Model() as model:
 			network = lasagne.layers.InputLayer(input_var=nn_input, shape=(None, 1, X_train.shape[1], X_train.shape[2]))
-			network = lasagne.layers.Conv2DLayer(network, num_filters=20, filter_size=(5, 5), b=init, W=init)
+			network = lasagne.layers.Conv2DLayer(network, num_filters=20, filter_size=(5, 5), W=init)
 			network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2), stride=(2, 2))
 
-			network = lasagne.layers.Conv2DLayer(network, num_filters=50, filter_size=(5, 5), b=init, W=init)
+			network = lasagne.layers.Conv2DLayer(network, num_filters=50, filter_size=(5, 5), W=init)
 			network = lasagne.layers.MaxPool2DLayer(network, pool_size=(2, 2), stride=(2, 2))
 
 			network = lasagne.layers.FlattenLayer(network)

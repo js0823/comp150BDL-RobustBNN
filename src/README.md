@@ -29,7 +29,7 @@ Current Data
   - Test data Accuracy = 19.15%
   - Test data Accuracy(Grayscale) = 31.34% (Tried 300 neurons and one more layer but that didn't help)
   - Test data Accuracy (300 neurons with 4 hidden layers) = 9.86%
-  - Test data Accuracy (tanh, b_out=10, 100) = 36.47%
+  - Test data Accuracy (tanh, 100) = 36.47%
 - nuts-bnn-MNIST.pkl
   - Test data Accuracy = 46.32% (Around 9 hours)
 - nuts-bnn-CIFAR10.pkl

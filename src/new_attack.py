@@ -581,7 +581,7 @@ if __name__ == "__main__":
     data = MNIST()
     path = "advi-bnn-MNIST-cpurun.pkl"
     model = BNN(path)
-    clean_x = data.test_data[:10].reshape(10, 784)
+    clean_x = data.test_data[:10]
     clean_y = data.test_labels[:10]
     # print(model.model_list[0].summary())
     # print(model.model_list[0].get_input_shape_at(1))

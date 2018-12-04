@@ -341,15 +341,17 @@ def differentiable_u_multiple(models, data):
 
 
 def create_filename(dataset, inf, threat, content):
-    return dataset + '_' + inf + '_' + threat + '_' + content + '.pkl' 
+    return "results/" + dataset + '_' + inf + '_' + threat + '_' + content
     
     
 def gray_box(clean_x, clean_y, confidence, model):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    single_model = np.random.choice(model.model_list, 1)
+    single_model = model.model_list[np.random.choice(len(model.model_list),1)[0]]#np.random.choice(model.model_list, 1)
+    # print(type(single_model))
+    # print(type(model.model))
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=5000,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=confidence)
     adv = attack.attack(clean_x, clean_y)
@@ -357,10 +359,14 @@ def gray_box(clean_x, clean_y, confidence, model):
 
 def white_box(clean_x, clean_y, confidence, model):
     all_models = model.model_list
-    models = np.random.choice(all_models, size=20, replace=false)
+    indices = np.random.choice(len(model.model_list), size=20, replace=False)
+    models = []
+    for i in indices:
+        models.append(all_models[i])
+    # models = np.random.choice(all_models, size=20, replace=False)
     sess = keras.backend.get_session()
     attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=10, binary_search_steps=4,
-                           initial_const=1, max_iterations=10, confidence=confidence, #1000 iters
+                           initial_const=1, max_iterations=5000, confidence=confidence, #1000 iters
                            targeted=False, abort_early=False, learning_rate=1e-1)
     adv = attack.attack(clean_x, clean_y)
     return adv
@@ -368,15 +374,24 @@ def white_box(clean_x, clean_y, confidence, model):
 def eval_model(model, clean_x, clean_y, adv):
     #Accuracy measurements
     sess = keras.backend.get_session()
-    adv_preds = model.predict(adv_x)
+    adv_preds = model.model.predict(adv)
     adv_acc = np.mean(np.argmax(adv_preds,axis=1) == np.argmax(clean_y,axis=1))
-    dist = np.mean([np.linalg.norm(clean_x[i]-adv[i]) for i in len(clean_x)])
+    dist = np.mean([np.linalg.norm(clean_x[i]-adv[i]) for i in range(len(clean_x))])
     models = model.model_list
-    clean_unc = differentiable_u_multiple(models, clean_x)
-    adv_unc = differentiable_u_multiple(models, adv)
-    roc_auc(clean_unc, adv_unc)
-    print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
-          tf.mean(clean_unc), tf.mean(adv_unc))
+    if ISMNIST:
+        p = tf.placeholder(tf.float32, (None, 28, 28, 1))
+    else:
+        p = tf.placeholder(tf.float32, (None, 32, 32, 3))
+    r1 = differentiable_u_multiple(models, p)
+    r2 = differentiable_u_multiple(models, p)
+    clean_unc = sess.run(r1, {p: clean_x})
+    adv_unc = sess.run(r2, {p: adv})
+    #print('uncertainty on test data', np.mean((sess.run(r, {p: data.test_data[:N]}))))
+    # clean_unc = differentiable_u_multiple(models, clean_x)
+    # adv_unc = differentiable_u_multiple(models, adv)
+    # roc_auc(clean_unc, adv_unc)
+    # print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
+    #       np.mean(clean_unc), np.mean(adv_unc))
     return adv_acc, dist, (clean_unc, adv_unc)
 
 def roc_auc(clean_us, adv_us):
@@ -464,7 +479,7 @@ def test(Model, data, path):
         p = tf.placeholder(tf.float32, (None, 28, 28, 1))
     else:
         p = tf.placeholder(tf.float32, (None, 32, 32, 3))
-    r = differentable_u(modeld, p, 100)
+    r = differentable_u(modeld, p, 100)    
 
     models = []
     for _ in range(20):
@@ -548,16 +563,18 @@ def test(Model, data, path):
 
 if __name__ == "__main__":
     data = MNIST()
-    model = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
-    preds = model.predict(data.test_data)
+    model = BNN("pkls/MNIST-ADVI.pkl")
+    # # i = np.random.choice(len(model.model_list), 10)
+    # # print(type(i[0]))
+    # # single_model = model.model_list[i[0]]
+    preds = model.model.predict(data.test_data)
     print('Model acc',np.mean(np.argmax(preds,axis=1)==np.argmax(data.test_labels,axis=1)))
     exit()
-
 
     datasets = ["MNIST", "CIFAR"]
     inf_methods = ["ADVI", "NUTS", "HMC", "MCDROP"]
     colors = ["gray", "white"]
-    confs = [1,2,3,4,5,6,7,8,9,10]
+    confs = [0,0.1,0.3,0.5,0.8,1,3,5,8,10,20,50]
     for dataset, inf in zip(datasets, inf_methods):
         if dataset == "MNIST":
             ISMNIST = True
@@ -587,23 +604,55 @@ if __name__ == "__main__":
             w_results[0].append(w_adv_acc)
             w_results[1].append(w_dist)
             w_results[2].append(w_uncs)
+            #visualize adv examples
+            adv_ex_g = adv_gray_box[0]
+            adv_ex_w = adv_white_box[0]
+            if dataset == "MNIST":
+                plt.gray()
+                adv_ex_g = adv_ex_g.reshape([28,28])
+                adv_ex_w = adv_ex_w.reshape([28,28])
+            else:
+                #cifar10 images subtracted .5 in setup_cifar
+                #reshape(32,32,3)?
+                adv_ex_g += 0.5
+                adv_ex_w += 0.5
+            plt.imshow(adv_ex_g)
+            # plt.show()
+            plt.savefig(dataset + "_" + inf + "_" + (str)(conf) + "_gray_adv_visualization.png")
+            plt.imshow(adv_ex_w)
+            plt.savefig(dataset + "_" + inf + "_" + (str)(conf) + "_white_adv_visualization.png")
+            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "adv_accs"), np.array(g_results[0]))
+            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "dists"), np.array(g_results[1]))
+            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "uncs"), np.array(g_results[2]))
+            np.save("adv_vis/" + create_filename(dataset, inf, "white", "adv_accs"), np.array(w_results[0]))
+            np.save("adv_vis/" + create_filename(dataset, inf, "white", "dists"), np.array(w_results[1]))
+            np.save("adv_vis/" + create_filename(dataset, inf, "white", "uncs"), np.array(w_results[2]))
+            # np.save(create_filename(dataset, inf, "white", "results"), np.array(w_results))
+        for i in range(len(confs)):
+            print("datatset: {}, inf_method: {}, threat: gray, conf: {}".format(dataset, inf, confs[i]))
+            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(g_results[0][i], g_results[1][i], 
+                    np.mean(g_results[2][i][0]), np.mean(g_results[2][i][1])))
+            print("datatset: {}, inf_method: {}, threat: white, conf: {}".format(dataset, inf, confs[i]))
+            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(w_results[0][i], w_results[1][i], 
+                    np.mean(w_results[2][i][0]), np.mean(w_results[2][i][1])))
         #save results in pkls
         #create_filename(dataset, inf, "gray", content)
         #create_filename(dataset, inf, "white", content)
-        #visualize adv examples
-        adv_ex_g = adv_gray_box[0]
-        adv_ex_w = adv_white_box[0]
-        if dataset == "MNIST":
-            plt.gray()
-            adv_ex_g = adv_ex_g.reshape([28,28])
-            adv_ex_w = adv_ex_w.reshape([28,28])
-        else:
-            #cifar10 images subtracted .5 in setup_cifar
-            #reshape(32,32,3)?
-            adv_ex_g += 0.5
-            adv_ex_w += 0.5
-        plt.imshow(adv_ex_g)
-        # plt.show()
-        plt.savefig(dataset + "_" + inf + "_gray_adv_visualization.png")
-        # plt.imshow(adv_ex_w)
-        # plt.savefig(dataset + "_" + inf + "_white_adv_visualization.png")
+# =======
+#     path = "advi-bnn-MNIST-cpurun.pkl"
+#     model = BNN(path)
+#     clean_x = data.test_data[:10]
+#     clean_y = data.test_labels[:10]
+#     # print(model.model_list[0].summary())
+#     # print(model.model_list[0].get_input_shape_at(1))
+#     adv_gray_box = gray_box(clean_x, clean_y, path)
+
+#     # adv_whitebox, models, labs = whitebox(Model, data, path)
+#     # print("graybox")
+#     # adv_acc, dist, (clean_unc, adv_unc) = eval_model(model, clean_x, clean_y, adv_gray_box)
+#     # print("whitebox")
+#     # eval_model(models, data, (adv_whitebox, labs))
+#     # print("graybox examples: {}".format(adv_graybox))
+#     # print("whitebox exampls: {}".format(adv_whitebox))
+#     # test(MNISTModel, MNIST(), "models/mnist")
+# >>>>>>> 7d58997fc5e60fd95e26a6459985ce6856fc216a

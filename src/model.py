@@ -7,13 +7,12 @@ import numpy as np
 import theano.tensor as T
 import loaddata
 import math
-import lasagne
 
 # For Bayesian CNN
 import keras
 from keras.models import Sequential
 from keras.layers.core import Activation
-from keras.layers import Input, Dense, Conv2D, Flatten, MaxPooling2D
+from keras.layers import InputLayer, Dense, Conv2D, Flatten, MaxPooling2D
 
 # For adding gaussian weights to Bayesian CNN
 class GaussWeights(object):
@@ -93,9 +92,10 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		model.add(Activation("softmax"))
 		'''
 
-		'''
+		# Using keras
 		with pm.Model() as model:
-			i = Input(tensor=nn_input, shape=(X_train.shape[1], X_train.shape[2]))
+			#i = InputLayer(tensor=nn_input, shape=(X_train.shape[1], X_train.shape[2]))
+			i = InputLayer(input_shape=(X_train.shape[1], X_train.shape[2]))
 			layer1 = Conv2D(20, kernel_size=(5, 5), kernel_initializer=init, activation='relu')(i)
 			layer1Pool = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(layer1)
 
@@ -108,9 +108,10 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			dense2 = Dense(10, kernel_initializer=init, activation='softmax')(dense1)
 
 			out = pm.Categorical('out', dense2, observed=nn_output, total_size=Y_train.shape[0])
-		'''
 		
-		# TODO: I think I need to use lasagne. See bayesian_cnn.py
+		'''
+		# Using lasagne
+		import lasagne
 		with pm.Model() as model:
 			network = lasagne.layers.InputLayer(input_var=nn_input, shape=(None, 1, X_train.shape[1], X_train.shape[2]))
 			network = lasagne.layers.Conv2DLayer(network, num_filters=20, filter_size=(5, 5), W=init)
@@ -125,5 +126,6 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			prediction = lasagne.layers.get_output(network)
 
 			out = pm.Categorical('out', prediction, observed=nn_output, total_size=Y_train.shape[0])
+		'''
 	
 	return model

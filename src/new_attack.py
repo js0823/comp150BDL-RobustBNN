@@ -344,32 +344,26 @@ def create_filename(dataset, inf, threat, content):
     return dataset + '_' + inf + '_' + threat + '_' + content + '.pkl' 
     
     
-def gray_box(clean_x, clean_y, path):
+def gray_box(clean_x, clean_y, confidence, model):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    posteriors = BNN(path)
-    single_model = np.random.choice(posteriors.model_list)
+    single_model = np.random.choice(model.model_list)
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=6, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
-                       targeted=False, confidence=0)
+                       targeted=False, confidence=confidence)
     adv = attack.attack(clean_x, clean_y)
     return adv
 
-def white_box(Model, data, path):
-    models = []
+
+def white_box(clean_x, clean_y, confidence, model):
+    models = np.random.choice(model.model_list, size=50, replace=False)
     sess = keras.backend.get_session()
-    batch_size=50
-    for _ in range(20):
-        m = make_model(Model, dropout=True, fixed=True)
-        m.load_weights(path)
-        models.append(m)
-    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=batch_size, binary_search_steps=4,
-                           initial_const=1, max_iterations=10, confidence=1, #1000 iters
+    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=10, binary_search_steps=4,
+                           initial_const=1, max_iterations=10, confidence=confidence, #1000 iters
                            targeted=False, abort_early=False, learning_rate=1e-1)
-    labs = get_labs(data.test_data[:batch_size])
-    adv = attack.attack(data.test_data[:batch_size], labs)
-    return adv, models, labs
+    adv = attack.attack(clean_x, clean_y)
+    return adv
         # guess = modeld.predict(adv)
         #differentiable_u_multiple?
 
@@ -386,6 +380,9 @@ def eval_model(model, clean_x, clean_y, adv):
     print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
           tf.mean(clean_unc), tf.mean(adv_unc))
     return adv_acc, dist, (clean_unc, adv_unc)
+
+def run_attacks(path):
+    pass
     #plot
 
     # class_sums = np.zeros(len(preds_probs[0]))
@@ -448,6 +445,8 @@ def test(Model, data, path):
     model = make_model(Model, dropout=False)
     model.load_weights(path)
     print("Model type is: ", type(model))
+    print(model.summary())
+    print(model.input_shape)
 
     modeld = make_model(Model, dropout=True)
     modeld.load_weights(path)
@@ -574,19 +573,17 @@ def test(Model, data, path):
 # test(CIFARModel, CIFAR(), "models/cifar")
 
 if __name__ == "__main__":
-    # Bnn = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
-    # print(Bnn)
     ISMNIST = True
-    # Model = MNISTModel
     data = MNIST()
-    path = "advi-bnn-MNIST-cpurun.pkl"
+    path = "advi-MNIST.pkl"
     model = BNN(path)
-    clean_x = data.test_data[:10].reshape(10, 784)
-    clean_y = data.test_labels[:10]
+    clean_x = data.test_data
+    clean_y = data.test_labels
+    # adv_gray_box = gray_box(clean_x, clean_y, 10, model)
+    preds = model.model.predict(clean_x)
+    print(np.mean(np.argmax(clean_y, axis=1) == np.argmax(preds, axis=1)))
     # print(model.model_list[0].summary())
-    # print(model.model_list[0].get_input_shape_at(1))
-    adv_gray_box = gray_box(clean_x, clean_y, path)
-
+    # print(model.model_list[0].input_shape)
     # adv_whitebox, models, labs = whitebox(Model, data, path)
     # print("graybox")
     # adv_acc, dist, (clean_unc, adv_unc) = eval_model(model, clean_x, clean_y, adv_gray_box)

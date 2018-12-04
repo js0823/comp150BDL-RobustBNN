@@ -121,7 +121,6 @@ venv.bak/
 *.jpg
 *.jpeg
 *.gz
-src/models
 bin/
 man/
 lib64

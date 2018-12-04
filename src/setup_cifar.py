@@ -15,7 +15,8 @@ import pickle
 import urllib.request
 
 from resnet import ResnetBuilder
-from keras.layers import Dropout
+from keras.models import Sequential
+from keras.layers import Dropout, Flatten, Dense, Activation
 
 def load_batch(fpath, label_key='labels'):
     f = open(fpath, 'rb')
@@ -83,21 +84,48 @@ class CIFAR:
         self.train_data = train_data[VALIDATION_SIZE:, :, :, :]
         self.train_labels = train_labels[VALIDATION_SIZE:]
 
+# class CIFARModel:
+#     def __init__(self, restore=None, session=None, Dropout=Dropout, num_labels=10):
+#         self.num_channels = 3
+#         self.image_size = 32
+#         self.num_labels = num_labels
+
+#         model = ResnetBuilder.build_resnet_32((3, 32, 32), num_labels, activation=False,
+#                                               Dropout=Dropout)
+
+#         if restore != None:
+#             model.load_weights(restore)
+
+#         self.model = model
+
+#     def predict(self, data):
+#         return self.model(data)
+        
+
 class CIFARModel:
     def __init__(self, restore=None, session=None, Dropout=Dropout, num_labels=10):
         self.num_channels = 3
         self.image_size = 32
         self.num_labels = num_labels
 
-        model = ResnetBuilder.build_resnet_32((3, 32, 32), num_labels, activation=False,
-                                              Dropout=Dropout)
+        model = Sequential()
+
+        layers = [Flatten(input_shape=(32,32,3,)),
+                  Dense(50),
+                  Activation('tanh'),
+                  Dense(50),
+                  Activation('relu'),
+                  Dropout(.5),
+                  Dense(num_labels)]
+
+        for layer in layers:
+            model.add(layer)
 
         if restore != None:
             model.load_weights(restore)
-
+        
         self.model = model
 
     def predict(self, data):
         return self.model(data)
-        
     

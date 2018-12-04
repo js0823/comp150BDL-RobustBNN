@@ -61,6 +61,39 @@ class MNIST:
         self.train_labels = train_labels[VALIDATION_SIZE:]
 
 
+# class MNISTModel:
+#     def __init__(self, restore=None, session=None, Dropout=Dropout, num_labels=10):
+#         self.num_channels = 1
+#         self.image_size = 28
+#         self.num_labels = num_labels
+
+#         model = Sequential()
+
+#         nb_filters = 64
+#         layers = [Conv2D(nb_filters, (5, 5), strides=(2, 2), padding="same",
+#                          input_shape=(28, 28, 1)),
+#                   Activation('relu'),
+#                   Conv2D(nb_filters, (3, 3), strides=(2, 2), padding="valid"),
+#                   Activation('relu'),
+#                   Conv2D(nb_filters, (3, 3), strides=(1, 1), padding="valid"),
+#                   Activation('relu'),
+#                   Flatten(),
+#                   Dense(32),
+#                   Activation('relu'),
+#                   Dropout(.5),
+#                   Dense(num_labels)]
+
+#         for layer in layers:
+#             model.add(layer)
+
+#         if restore != None:
+#             model.load_weights(restore)
+        
+#         self.model = model
+
+#     def predict(self, data):
+#         return self.model(data)
+
 class MNISTModel:
     def __init__(self, restore=None, session=None, Dropout=Dropout, num_labels=10):
         self.num_channels = 1
@@ -69,16 +102,10 @@ class MNISTModel:
 
         model = Sequential()
 
-        nb_filters = 64
-        layers = [Conv2D(nb_filters, (5, 5), strides=(2, 2), padding="same",
-                         input_shape=(28, 28, 1)),
-                  Activation('relu'),
-                  Conv2D(nb_filters, (3, 3), strides=(2, 2), padding="valid"),
-                  Activation('relu'),
-                  Conv2D(nb_filters, (3, 3), strides=(1, 1), padding="valid"),
-                  Activation('relu'),
-                  Flatten(),
-                  Dense(32),
+        layers = [Flatten(input_shape=(28,28,1,)),
+                  Dense(50),
+                  Activation('tanh'),
+                  Dense(50),
                   Activation('relu'),
                   Dropout(.5),
                   Dense(num_labels)]

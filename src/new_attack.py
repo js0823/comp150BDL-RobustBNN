@@ -11,7 +11,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
-from keras.utils import np_utils
+from keras.utils import np_utils, plot_model
 from keras.layers.core import Lambda
 from keras.callbacks import LearningRateScheduler
 from keras.optimizers import SGD
@@ -344,34 +344,26 @@ def create_filename(dataset, inf, threat, content):
     return dataset + '_' + inf + '_' + threat + '_' + content + '.pkl' 
     
     
-def gray_box(clean_x, clean_y, path):
+def gray_box(clean_x, clean_y, confidence, model):
     #hyperparams = init_hp...
     # model = Model.create_model()
-    posteriors = BNN(path)
-    single_model = np.random.choice(posteriors.model_list)
+    single_model = np.random.choice(model.model_list, 1)
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=50, max_iterations=10,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=10,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
-                       targeted=False, confidence=0)
+                       targeted=False, confidence=confidence)
     adv = attack.attack(clean_x, clean_y)
     return adv
 
-def white_box(Model, data, path):
-    models = []
+def white_box(clean_x, clean_y, confidence, model):
+    all_models = model.model_list
+    models = np.random.choice(all_models, size=20, replace=false)
     sess = keras.backend.get_session()
-    batch_size=50
-    for _ in range(20):
-        m = make_model(Model, dropout=True, fixed=True)
-        m.load_weights(path)
-        models.append(m)
-    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=batch_size, binary_search_steps=4,
-                           initial_const=1, max_iterations=10, confidence=1, #1000 iters
+    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=10, binary_search_steps=4,
+                           initial_const=1, max_iterations=10, confidence=confidence, #1000 iters
                            targeted=False, abort_early=False, learning_rate=1e-1)
-    labs = get_labs(data.test_data[:batch_size])
-    adv = attack.attack(data.test_data[:batch_size], labs)
-    return adv, models, labs
-        # guess = modeld.predict(adv)
-        #differentiable_u_multiple?
+    adv = attack.attack(clean_x, clean_y)
+    return adv
 
 def eval_model(model, clean_x, clean_y, adv):
     #Accuracy measurements
@@ -491,12 +483,12 @@ def test(Model, data, path):
 
 
     z = np.zeros((N, 10))
-    z[np.arange(N),np.random.random_integers(0,9,N)] = 1
-    # z[np.arange(N),(9, 3, 0, 8, 7, 3, 4, 1, 6, 4)] = 1
-    print(z)
+    z[np.arange(N),np.random.random_integers(0,9,N)]
 
     #qq = (3, 2, 1, 18, 4, 8, 11, 0, 61, 7)
-    #np.save("images/mnist_dropout", attack.attack(data.test_data[qq,:,:,:],
+    #np.save("images/mnist_dropout", attack.attack( = 1
+    # z[np.arange(N),(9, 3, 0, 8, 7, 3, 4, 1, 6, 4)] = 1
+    # print(z)data.test_data[qq,:,:,:],
     #                                               np.pad(np.roll(data.test_labels[qq,:],1,axis=1), [(0, 0), (0, 0)], 'constant')))
     #exit(0)
 
@@ -555,25 +547,38 @@ def test(Model, data, path):
 # test(CIFARModel, CIFAR(), "models/cifar")
 
 if __name__ == "__main__":
+    data = MNIST()
+    model = BNN("pkls/advi-bnn-MNIST-cpurun.pkl")
+    preds = model.predict(data.test_data)
+    print('Model acc',np.mean(np.argmax(preds,axis=1)==np.argmax(data.test_labels,axis=1)))
+    exit()
+
+
     datasets = ["MNIST", "CIFAR"]
     inf_methods = ["ADVI", "NUTS", "HMC", "MCDROP"]
     colors = ["gray", "white"]
-    confs = [1,2,3,4]
+    confs = [1,2,3,4,5,6,7,8,9,10]
     for dataset, inf in zip(datasets, inf_methods):
         if dataset == "MNIST":
+            ISMNIST = True
             data = MNIST()
         else:
+            ISMNIST = False
             data = CIFAR()
         #standardize naming of pkls between comps in some way
         path = "pkls/" + dataset + "-" + inf + ".pkl"
-        model = BNN(path) 
-        clean_x = data.test_data[:50]
-        clean_y = data.test_labels[:50]
+        try:
+            print(path)
+            model = BNN(path)
+        except(FileNotFoundError):
+            pass
+        clean_x = data.test_data[:10]
+        clean_y = data.test_labels[:10]
         g_results = [[],[],[]]
         w_results = [[],[],[]]
         for conf in confs:
-            adv_gray_box = gray_box(clean_x, clean_y, path, conf)
-            adv_white_box = white_box(clean_x, clean_y, path, conf)
+            adv_gray_box = gray_box(clean_x, clean_y, conf, model)
+            adv_white_box = white_box(clean_x, clean_y, conf, model)
             g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
             w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
             g_results[0].append(g_adv_acc)

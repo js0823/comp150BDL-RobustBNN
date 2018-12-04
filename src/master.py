@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 inference_alg = 'advi'  # Can be advi, nuts
 modeltype = 'bnn' # can be bnn or bcnn
 data = 'CIFAR10' # can be MNIST or CIFAR10
-h_layer_size = 50
+h_layer_size = 100
 mean = 0
 var = 1
 nPosterior_samples = 200

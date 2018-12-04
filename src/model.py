@@ -65,8 +65,8 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 									shape=(10), testval=init_b_out)
 
 			# Build neural-network using tanh activation function
-			act_1 = pm.math.sigmoid(pm.math.dot(nn_input, weights_in_1) + weights_in_b1)
-			act_2 = pm.math.sigmoid(pm.math.dot(act_1, weights_1_2) + weights_in_b2)
+			act_1 = pm.math.tanh(pm.math.dot(nn_input, weights_in_1) + weights_in_b1)
+			act_2 = pm.math.tanh(pm.math.dot(act_1, weights_1_2) + weights_in_b2)
 			act_out = T.nnet.softmax(pm.math.dot(act_2, weights_2_out) + weights_in_b_out)
 			
 			out = pm.Categorical('out', act_out, observed=nn_output, total_size=Y_train.shape[0]) # IMPORTANT for minibatches

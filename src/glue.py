@@ -2,9 +2,11 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Activation, Flatten, average, Input
+from keras.layers import Dense, Dropout, Activation, Flatten, average
+from keras.layers import Input, InputLayer
 from keras.layers import Conv2D, MaxPooling2D
 import keras
+
 
 class BNN:
     def __init__(self, path=None, ISMNIST=True, num_labels=10, LeNet=False,
@@ -35,7 +37,8 @@ class BNN:
             ids = np.random.choice(range(burnin, len(trace)), 
                                           num_samples, replace=False)
             models = ([create_lenet(trace.point(i), ISMNIST) for i in ids]
-                     if LeNet else [create_model(trace.point(i)) for i in ids])
+                     if LeNet else [create_model(trace.point(i), ISMNIST) 
+                                                            for i in ids])
             
         def average_preds(models, data):
             """
@@ -47,13 +50,14 @@ class BNN:
             - models: A list of Keras models
             - data: Observations as a Numpy array
             """
-            preds = [model(data) for model in models]
+            flat = Flatten()(data)
+            preds = [model(flat) for model in models]
             avg = average(preds)
             avg_model = Model(inputs=data, outputs=avg)
             return avg_model
 
         # Save model returned by average_preds function as model
-        inp = Input(shape=(self.num_channels * self.image_size**2,))
+        inp = Input(shape=(self.image_size, self.image_size, self.num_channels,))
         model = average_preds(models, inp)
         self.model = model
         self.model_list = models
@@ -63,7 +67,7 @@ class BNN:
         return self.model(data)
 
 
-def create_model(weights):
+def create_model(weights, ISMNIST):
     """
     Given a set of weights, constructs a simple BNN with only dense layers.
     Returns a Keras model.
@@ -74,22 +78,16 @@ def create_model(weights):
     """
     model = Sequential()
     num_layers = len(weights)
-    layers = []
+    input_shape = (28,28,1) if ISMNIST else (32,32,3)
+    layers = [InputLayer(input_shape=input_shape, batch_size=10), Flatten()]
     
     # We will infer NN architecture from the shapes of the weight arrays.
     for i, (name, data) in enumerate(list(weights.items())[0::2]):
         
         # Set input_dims only for the first layer
-        if i == 0:
-            input_dim = data.shape[0]
-            layers.append(Dense(data.shape[1], name=name, input_dim=input_dim))
+        layers.append(Dense(data.shape[1], name=name))
+        if i != num_layers//2 - 1:
             layers.append(Activation('tanh'))
-        else:
-            layers.append(Dense(data.shape[1], name=name))
-            
-            # Only add an activation if it's not the last layer
-            if i != num_layers//2 - 1:
-                layers.append(Activation('tanh'))
 
     # Construct model architecture
     for layer in layers:

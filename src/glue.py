@@ -5,6 +5,7 @@ from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Activation, Flatten, average
 from keras.layers import Input, InputLayer
 from keras.layers import Conv2D, MaxPooling2D
+from keras.activations import softmax
 import keras
 
 
@@ -33,13 +34,18 @@ class BNN:
         with open(path, 'rb') as f:
             # Randomly choose posterior samples after burnin phase
             # and create a Keras model for each
-            trace = pickle.load(f)['trace']
+            trace = pickle.load(f)
+            # print(trace)
             ids = np.random.choice(range(burnin, len(trace)), 
                                           num_samples, replace=False)
+            # ids = np.ones(num_samples)
             models = ([create_lenet(trace.point(i), ISMNIST) for i in ids]
                      if LeNet else [create_model(trace.point(i), ISMNIST) 
                                                             for i in ids])
-            
+        
+        # print(trace.point(1))
+        # print(trace.point(199))
+
         def average_preds(models, data):
             """
             Takes in a list of posterior samples and data as a Numpy array
@@ -50,8 +56,8 @@ class BNN:
             - models: A list of Keras models
             - data: Observations as a Numpy array
             """
-            flat = Flatten()(data)
-            preds = [model(flat) for model in models]
+            out = [model(data) for model in models]
+            preds = [Activation('softmax')(o) for o in out]
             avg = average(preds)
             avg_model = Model(inputs=data, outputs=avg)
             return avg_model
@@ -79,7 +85,7 @@ def create_model(weights, ISMNIST):
     model = Sequential()
     num_layers = len(weights)
     input_shape = (28,28,1) if ISMNIST else (32,32,3)
-    layers = [InputLayer(input_shape=input_shape, batch_size=10), Flatten()]
+    layers = [Flatten(input_shape=input_shape)]
     
     # We will infer NN architecture from the shapes of the weight arrays.
     for i, (name, data) in enumerate(list(weights.items())[0::2]):
@@ -94,6 +100,9 @@ def create_model(weights, ISMNIST):
         model.add(layer)
     
     # Initialize model weights
+    for w in list(weights.values()):
+        print(w.shape)
+
     model.set_weights(list(weights.values()))
     return model
 
@@ -135,10 +144,10 @@ def check_model_dims(path):
             print(arr.shape)
 
 if __name__ == '__main__':
-    path = 'pkls/advi-bnn-MNIST-cpurun.pkl'
+    path = 'advi-MNIST.pkl'
     BNN = BNN(path)
-    fake_data = np.random.rand(64, 784)
-    model = BNN.model
-    models = BNN.model_list
-    print(model.summary())
-    print(model.predict(fake_data))
+    # fake_data = np.random.rand(64, 784)
+    # model = BNN.model
+    # models = BNN.model_list
+    # print(model.summary())
+    # print(model.predict(fake_data))

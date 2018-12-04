@@ -46,6 +46,7 @@ LEARNING_RATE = 1e-2     # larger values converge faster to less accurate result
 TARGETED = True          # should we target one specific class? or just be wrong?
 CONFIDENCE = 0           # how strong the adversarial example should be
 INITIAL_CONST = 1e-3     # the initial constant c to pick as a first guess
+ISMNIST = False
 class CarliniL2Multiple:
     def __init__(self, sess, models, batch_size=1, confidence = CONFIDENCE,
                  targeted = TARGETED, learning_rate = LEARNING_RATE,
@@ -351,7 +352,7 @@ def gray_box(clean_x, clean_y, confidence, model):
     # print(type(single_model))
     # print(type(model.model))
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=5000,#1000
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=10, max_iterations=1000,#1000
                        binary_search_steps=3, learning_rate=1e-1, initial_const=1,
                        targeted=False, confidence=confidence)
     adv = attack.attack(clean_x, clean_y)
@@ -359,14 +360,14 @@ def gray_box(clean_x, clean_y, confidence, model):
 
 def white_box(clean_x, clean_y, confidence, model):
     all_models = model.model_list
-    indices = np.random.choice(len(model.model_list), size=20, replace=False)
+    indices = np.random.choice(len(model.model_list), size=50, replace=False)
     models = []
     for i in indices:
         models.append(all_models[i])
     # models = np.random.choice(all_models, size=20, replace=False)
     sess = keras.backend.get_session()
     attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=10, binary_search_steps=4,
-                           initial_const=1, max_iterations=5000, confidence=confidence, #1000 iters
+                           initial_const=1, max_iterations=1000, confidence=confidence, #1000 iters
                            targeted=False, abort_early=False, learning_rate=1e-1)
     adv = attack.attack(clean_x, clean_y)
     return adv
@@ -393,6 +394,73 @@ def eval_model(model, clean_x, clean_y, adv):
     # print("Adv. Acc, Distortion, Mean Clean Unc, Mean Adv Unc: ", adv_acc, dist, 
     #       np.mean(clean_unc), np.mean(adv_unc))
     return adv_acc, dist, (clean_unc, adv_unc)
+
+def run_attacks():
+    datasets = ["MNIST", "CIFAR"]
+    inf_methods = ["ADVI", "NUTS", "HMC", "MCDROP"]
+    colors = ["gray", "white"]
+    confs = [0,1,2,3,4,5,6,7,8,9,10,20,50]
+    for dataset, inf in zip(datasets, inf_methods):
+        global ISMNIST
+        if dataset == "MNIST":
+            ISMNIST = True
+            data = MNIST()
+        else:
+            ISMNIST = False
+            data = CIFAR()
+        #standardize naming of pkls between comps in some way
+        path = "pkls/" + dataset + "-" + inf + ".pkl"
+        try:
+            print(path)
+            model = BNN(path)
+        except(FileNotFoundError):
+            pass
+        clean_x = data.test_data[:10]
+        clean_y = data.test_labels[:10]
+        g_results = [[],[],[]]
+        w_results = [[],[],[]]
+        for conf in confs:
+            adv_gray_box = gray_box(clean_x, clean_y, conf, model)
+            adv_white_box = white_box(clean_x, clean_y, conf, model)
+            g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
+            w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
+            g_results[0].append(g_adv_acc)
+            g_results[1].append(g_dist)
+            g_results[2].append(g_uncs)
+            w_results[0].append(w_adv_acc)
+            w_results[1].append(w_dist)
+            w_results[2].append(w_uncs)
+            #visualize adv examples
+            adv_ex_g = adv_gray_box[0]
+            adv_ex_w = adv_white_box[0]
+            if dataset == "MNIST":
+                plt.gray()
+                adv_ex_g = adv_ex_g.reshape([28,28])
+                adv_ex_w = adv_ex_w.reshape([28,28])
+            else:
+                #cifar10 images subtracted .5 in setup_cifar
+                #reshape(32,32,3)?
+                adv_ex_g += 0.5
+                adv_ex_w += 0.5
+            plt.imshow(adv_ex_g)
+            # plt.show()
+            plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_gray_adv_visualization.png")
+            plt.imshow(adv_ex_w)
+            plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_white_adv_visualization.png")
+            np.save(create_filename(dataset, inf, "gray", "adv_accs"), np.array(g_results[0]))
+            np.save(create_filename(dataset, inf, "gray", "dists"), np.array(g_results[1]))
+            np.save(create_filename(dataset, inf, "gray", "uncs"), np.array(g_results[2]))
+            np.save(create_filename(dataset, inf, "white", "adv_accs"), np.array(w_results[0]))
+            np.save(create_filename(dataset, inf, "white", "dists"), np.array(w_results[1]))
+            np.save(create_filename(dataset, inf, "white", "uncs"), np.array(w_results[2]))
+            # np.save(create_filename(dataset, inf, "white", "results"), np.array(w_results))
+        for i in range(len(confs)):
+            print("datatset: {}, inf_method: {}, threat: gray, conf: {}".format(dataset, inf, confs[i]))
+            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(g_results[0][i], g_results[1][i], 
+                    np.mean(g_results[2][i][0]), np.mean(g_results[2][i][1])))
+            print("datatset: {}, inf_method: {}, threat: white, conf: {}".format(dataset, inf, confs[i]))
+            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(w_results[0][i], w_results[1][i], 
+                    np.mean(w_results[2][i][0]), np.mean(w_results[2][i][1])))
 
 def roc_auc(clean_us, adv_us):
     uncertainties = np.concatenate((np.stack((clean_us, np.zeros(len(clean_us))),axis=-1), np.stack((adv_us, np.ones(len(adv_us))),axis=-1)))
@@ -436,6 +504,8 @@ def test(Model, data, path):
     model = make_model(Model, dropout=False)
     model.load_weights(path)
     print("Model type is: ", type(model))
+    print(model.summary())
+    print(model.input_shape)
 
     modeld = make_model(Model, dropout=True)
     modeld.load_weights(path)
@@ -562,79 +632,19 @@ def test(Model, data, path):
 # test(CIFARModel, CIFAR(), "models/cifar")
 
 if __name__ == "__main__":
-    data = MNIST()
-    model = BNN("pkls/MNIST-ADVI.pkl")
-    # # i = np.random.choice(len(model.model_list), 10)
-    # # print(type(i[0]))
-    # # single_model = model.model_list[i[0]]
-    preds = model.model.predict(data.test_data)
-    print('Model acc',np.mean(np.argmax(preds,axis=1)==np.argmax(data.test_labels,axis=1)))
-    exit()
+    # data = MNIST()
+    # model = BNN("pkls/MNIST-ADVI.pkl")
+    # # # i = np.random.choice(len(model.model_list), 10)
+    # # # print(type(i[0]))
+    # # # single_model = model.model_list[i[0]]
+    # preds = model.model.predict(data.test_data)
+    # print('Model acc',np.mean(np.argmax(preds,axis=1)==np.argmax(data.test_labels,axis=1)))
+    # exit()
 
-    datasets = ["MNIST", "CIFAR"]
-    inf_methods = ["ADVI", "NUTS", "HMC", "MCDROP"]
-    colors = ["gray", "white"]
-    confs = [0,0.1,0.3,0.5,0.8,1,3,5,8,10,20,50]
-    for dataset, inf in zip(datasets, inf_methods):
-        if dataset == "MNIST":
-            ISMNIST = True
-            data = MNIST()
-        else:
-            ISMNIST = False
-            data = CIFAR()
-        #standardize naming of pkls between comps in some way
-        path = "pkls/" + dataset + "-" + inf + ".pkl"
-        try:
-            print(path)
-            model = BNN(path)
-        except(FileNotFoundError):
-            pass
-        clean_x = data.test_data[:10]
-        clean_y = data.test_labels[:10]
-        g_results = [[],[],[]]
-        w_results = [[],[],[]]
-        for conf in confs:
-            adv_gray_box = gray_box(clean_x, clean_y, conf, model)
-            adv_white_box = white_box(clean_x, clean_y, conf, model)
-            g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
-            w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
-            g_results[0].append(g_adv_acc)
-            g_results[1].append(g_dist)
-            g_results[2].append(g_uncs)
-            w_results[0].append(w_adv_acc)
-            w_results[1].append(w_dist)
-            w_results[2].append(w_uncs)
-            #visualize adv examples
-            adv_ex_g = adv_gray_box[0]
-            adv_ex_w = adv_white_box[0]
-            if dataset == "MNIST":
-                plt.gray()
-                adv_ex_g = adv_ex_g.reshape([28,28])
-                adv_ex_w = adv_ex_w.reshape([28,28])
-            else:
-                #cifar10 images subtracted .5 in setup_cifar
-                #reshape(32,32,3)?
-                adv_ex_g += 0.5
-                adv_ex_w += 0.5
-            plt.imshow(adv_ex_g)
-            # plt.show()
-            plt.savefig(dataset + "_" + inf + "_" + (str)(conf) + "_gray_adv_visualization.png")
-            plt.imshow(adv_ex_w)
-            plt.savefig(dataset + "_" + inf + "_" + (str)(conf) + "_white_adv_visualization.png")
-            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "adv_accs"), np.array(g_results[0]))
-            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "dists"), np.array(g_results[1]))
-            np.save("adv_vis/" + create_filename(dataset, inf, "gray", "uncs"), np.array(g_results[2]))
-            np.save("adv_vis/" + create_filename(dataset, inf, "white", "adv_accs"), np.array(w_results[0]))
-            np.save("adv_vis/" + create_filename(dataset, inf, "white", "dists"), np.array(w_results[1]))
-            np.save("adv_vis/" + create_filename(dataset, inf, "white", "uncs"), np.array(w_results[2]))
-            # np.save(create_filename(dataset, inf, "white", "results"), np.array(w_results))
-        for i in range(len(confs)):
-            print("datatset: {}, inf_method: {}, threat: gray, conf: {}".format(dataset, inf, confs[i]))
-            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(g_results[0][i], g_results[1][i], 
-                    np.mean(g_results[2][i][0]), np.mean(g_results[2][i][1])))
-            print("datatset: {}, inf_method: {}, threat: white, conf: {}".format(dataset, inf, confs[i]))
-            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(w_results[0][i], w_results[1][i], 
-                    np.mean(w_results[2][i][0]), np.mean(w_results[2][i][1])))
+    #TODO: if still want change so you pass in the path
+    run_attacks()
+
+
         #save results in pkls
         #create_filename(dataset, inf, "gray", content)
         #create_filename(dataset, inf, "white", content)

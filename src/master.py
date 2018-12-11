@@ -8,17 +8,19 @@ import theano.tensor as T
 import pymc3 as pm
 from sklearn.metrics import accuracy_score
 import pickle
+import time
+import sys
 
 ###################### Configurations ########################
-inference_alg = 'advi'  # Can be advi, nuts, hmc
+inference_alg = 'nuts'  # Can be advi, nuts, hmc
 modeltype = 'bnn' # can be bnn or bcnn
 data = 'CIFAR10' # can be MNIST or CIFAR10
-h_layer_size = 50
+h_layer_size = 100
 mean = 0
 var = 1
 nPosterior_samples = 200
 test_trace = False # Setting this true will test the picked file only
-trace_save_filename = 'advi-bnn-CIFAR10.pkl'
+trace_save_filename = 'nuts-bnn-CIFAR10.zip'
 ##############################################################
 
 def run_config(modeltype, inference_alg, data):
@@ -72,5 +74,11 @@ def run_config(modeltype, inference_alg, data):
 
 if __name__ == "__main__":
 	# Run the main program
+	start = time.time()
 	accuracies = run_config(modeltype, inference_alg, data)
+	end = time.time()
+
 	print("Test accuracy = {}%".format(accuracies * 100))
+	
+	minutes = (end - start) / 60
+	print("\nExecution Time: " + str(minutes) + " minutes")

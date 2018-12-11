@@ -4,7 +4,6 @@ import keras
 from keras.datasets import cifar10
 from keras.datasets import mnist
 
-
 # TODO: We can use sklearn or keras to get datasets and not download the files.
 def load_MNIST_dataset():
     from urllib.request import urlretrieve

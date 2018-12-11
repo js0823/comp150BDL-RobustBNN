@@ -25,8 +25,21 @@ Using AWS
 - our aws server = aws-gpu-3.eecs.tufts.edu
 
 Current Data
-- advi-bnn-MNIST.pkl
-  - Test data Accuracy = 95.68% (Consistent)
+- advi-bnn-MNIST.zip
+  - Accuracy = 96.39%
+- advi-bnn-CIFAR10.zip
+  - Accuracy = 33.17%
+- nuts-bnn-MNIST.zip
+  - Accuracy = 97.41%
+- nuts-bnn-CIFAR10.zip
+  - Accuracy = 
+
+- advi-bnn-MNIST-gpu.pkl
+  - Test data Accuracy = 95.86%
+- advi-bnn-CIFAR10-gpu.pkl
+  - Test data accuracy = 29.28%
+
+
 - advi-bnn-CIFAR10.pkl
   - Test data Accuracy = 19.15%
   - Test data Accuracy(Grayscale) = 31.34% (Tried 300 neurons and one more layer but that didn't help)
@@ -34,6 +47,7 @@ Current Data
   - Test data Accuracy (tanh, 100) = 36.47%
 - advi-bnn-CIFAR10-cpu.pkl
   - Test data accuracy = 26.39%
+
 - nuts-bnn-MNIST.pkl
   - Test data Accuracy = 46.32% (Around 9 hours)
 - nuts-bnn-CIFAR10.pkl

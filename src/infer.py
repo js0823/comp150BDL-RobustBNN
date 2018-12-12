@@ -29,8 +29,13 @@ def save_trace(trace, filename):
 	print("Saving trace done.")
 
 def load_trace(filename):
+	trace = []
 	with open(filename, 'rb') as buff:
-		trace = list(np.load(buff))
+		#trace = load(buff)['trace'] # this works on gpu but why not on cpu...
+		npzfile = np.load(buff)
+		for t in npzfile:
+			trace.append(np.asarray(t))
+	print(type(trace))
 	print("Loading trace done.")
 	return trace
 

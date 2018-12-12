@@ -15,7 +15,7 @@ import sys
 inference_alg = 'nuts'  # Can be advi, nuts, hmc
 modeltype = 'bnn' # can be bnn or bcnn
 data = 'CIFAR10' # can be MNIST or CIFAR10
-h_layer_size = 100
+h_layer_size = 50
 mean = 0
 var = 1
 nPosterior_samples = 200

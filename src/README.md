@@ -32,7 +32,7 @@ Current Data
 - nuts-bnn-MNIST.zip
   - Accuracy = 97.41%
 - nuts-bnn-CIFAR10.zip
-  - Accuracy = 
+  - Accuracy = 56.03%
 
 - advi-bnn-MNIST-gpu.pkl
   - Test data Accuracy = 95.86%

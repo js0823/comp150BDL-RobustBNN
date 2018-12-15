@@ -21,7 +21,7 @@ class GaussWeights(object):
     def __call__(self, shape):
         self.count += 1
         return pm.Normal('w%d' % self.count, mu=0, sd=.1,
-                         testval=np.random.normal(size=shape).astype(np.float32),
+                         testval=np.random.normal(size=shape).astype(np.floatX),
                          shape=shape)
 
 def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=False, init=GaussWeights()):
@@ -39,8 +39,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 		with pm.Model() as model:
 			# Weights from input to hidden layer
 			weights_in_1 = pm.Normal('w_in_1', mu=mean, sd=math.sqrt(var/n_hidden),
-									shape=(X_train.shape[1], n_hidden),
-									testval=init_1)
+									shape=(X_train.shape[1], n_hidden), testval=init_1)
 
 			# Add bias to first hidden layer
 			weights_in_b1 = pm.Normal('b_1', mu=mean, sd=math.sqrt(var/n_hidden), 
@@ -48,8 +47,7 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			
 			# Weights from 1st to 2nd layer
 			weights_1_2 = pm.Normal('w_1_2', mu=mean, sd=math.sqrt(var/n_hidden), 
-									shape=(n_hidden, n_hidden), 
-									testval=init_2)
+									shape=(n_hidden, n_hidden), testval=init_2)
 
 			# Add bias to second hidden layer
 			weights_in_b2 = pm.Normal('b_2', mu=mean, sd=math.sqrt(var/n_hidden), 
@@ -63,12 +61,17 @@ def create_NN(n_hidden, mean, var, nn_input, nn_output, X_train, Y_train, conv=F
 			weights_in_b_out = pm.Normal('b_out', mu=mean, sd=math.sqrt(var/n_hidden), 
 									shape=(10), testval=init_b_out)
 
-			# Build neural-network using tanh activation function
+			# Build neural-network using activation function
 			act_1 = pm.math.tanh(pm.math.dot(nn_input, weights_in_1) + weights_in_b1)
 			act_2 = pm.math.tanh(pm.math.dot(act_1, weights_1_2) + weights_in_b2)
 			act_out = T.nnet.softmax(pm.math.dot(act_2, weights_2_out) + weights_in_b_out)
 			
-			out = pm.Categorical('out', act_out, observed=nn_output, total_size=Y_train.shape[0]) # IMPORTANT for minibatches
+			# likelihood
+			out = pm.Categorical('out', p=act_out, observed=nn_output, total_size=Y_train.shape[0]) # IMPORTANT for minibatches
+
+		# debugging. Comment this out if not debugging!
+		#print(model.check_test_point())
+		#quit()
 	
 	else: # Bayesian Convolutional neural network (Lenet)
 		'''

@@ -80,6 +80,7 @@ def mnist_tutorial_jsma(train_start=0, train_end=60000, test_start=0,
   # Define input TF placeholder
   x = tf.placeholder(tf.float32, shape=(None, img_rows, img_cols,
                                         nchannels))
+  print(x)
   y = tf.placeholder(tf.float32, shape=(None, nb_classes))
 
   nb_filters = 64
@@ -154,6 +155,7 @@ def mnist_tutorial_jsma(train_start=0, train_end=60000, test_start=0,
       'clip_min': 0,
       'clip_max': 1
     }
+  print(x)
   adv_x = attack.generate(x, **attack_params)
   preds_adv = model.get_logits(adv_x)
   acc = model_eval(sess, x, y, preds_adv, x_test, y_test, args=eval_params)

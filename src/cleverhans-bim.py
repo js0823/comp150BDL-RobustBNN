@@ -136,6 +136,7 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
   if clean_train:
     model = ModelBasicCNN('model1', nb_classes, nb_filters)
     preds = model.get_logits(x)
+    print(preds)
     loss = CrossEntropy(model, smoothing=label_smoothing)
 
     def evaluate():
@@ -152,8 +153,21 @@ def mnist_tutorial(train_start=0, train_end=60000, test_start=0,
     # graph
     bim = BasicIterativeMethod(model, sess=sess)
     adv_x = bim.generate(x, **bim_params)
+    print("adv_x")
+    print(adv_x)
+
+    temp = bim.generate_np(x_train[0:10], **bim_params)
+    print("x10")
+    print(x_train[0:10])
+    print("temp")
+    print(temp)
+
     
     preds_adv = model.get_logits(adv_x)
+    print("preds_adv")
+    print(preds_adv)
+    print("pred_adv_value")
+    print(sess.run(preds_adv))
 
     # Evaluate the accuracy of the MNIST model on adversarial examples
     do_eval(preds_adv, x_test, y_test, 'clean_train_adv_eval', True)

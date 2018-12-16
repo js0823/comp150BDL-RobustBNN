@@ -409,9 +409,10 @@ def run_attacks():
             ISMNIST = False
             data = CIFAR()
         #standardize naming of pkls between comps in some way
-        path = "pkls/" + dataset + "-" + inf + ".pkl"
+        path = "pkls/" + dataset + "-" + inf + ".zip"
         try:
             print(path)
+            print(ISMNIST)
             model = BNN(path)
         except(FileNotFoundError):
             pass

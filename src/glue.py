@@ -7,6 +7,7 @@ from keras.layers import Input, InputLayer
 from keras.layers import Conv2D, MaxPooling2D
 from keras.activations import softmax
 import keras
+from theano.misc.pkl_utils import load, dump
 
 
 class BNN:
@@ -34,7 +35,8 @@ class BNN:
         with open(path, 'rb') as f:
             # Randomly choose posterior samples after burnin phase
             # and create a Keras model for each
-            trace = pickle.load(f)
+            #trace = pickle.load(f)
+            trace = load(f)['trace']
             # print(trace)
             ids = np.random.choice(range(burnin, len(trace)), 
                                           num_samples, replace=False)

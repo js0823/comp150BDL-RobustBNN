@@ -400,10 +400,6 @@ def run_attacks():
     inf_methods = ["ADVI", "NUTS"]#, "HMC", "MCDROP"]
     colors = ["gray", "white"]
     confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
-    for dataset, inf in zip(datasets, inf_methods):
-        print(dataset)
-        print(inf)
-    exit()
     for dataset in datasets:
         for inf in inf_methods:
             global ISMNIST

@@ -15,12 +15,12 @@ import sys
 inference_alg = 'nuts'  # Can be advi, nuts, hmc
 modeltype = 'bnn' # can be bnn or bcnn
 data = 'CIFAR10' # can be MNIST or CIFAR10
-h_layer_size = 50
+h_layer_size = 100
 mean = 0
 var = 1
 nPosterior_samples = 200
-test_trace = False # Setting this true will test the picked file only
-trace_save_filename = 'nuts-bnn-CIFAR10.zip'
+test_trace = True # Setting this true will test the picked file only
+trace_save_filename = 'advi-bnn-MNIST.zip'
 ##############################################################
 
 def run_config(modeltype, inference_alg, data):
@@ -68,6 +68,7 @@ def run_config(modeltype, inference_alg, data):
 	
 	# Calculate accuracy of the model trace
 	accuracies = accuracy_score(Y_test, pred_test)
+	print(np.mean(np.argmax(Y_test,axis=1)==np.argmax(pred_test,axis=1)))
 
 	#return accuracies, detect_rates
 	return accuracies

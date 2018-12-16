@@ -102,8 +102,8 @@ def create_model(weights, ISMNIST):
         model.add(layer)
     
     # Initialize model weights
-    for w in list(weights.values()):
-        print(w.shape)
+    # for w in list(weights.values()):
+        # print(w.shape)
 
     model.set_weights(list(weights.values()))
     return model

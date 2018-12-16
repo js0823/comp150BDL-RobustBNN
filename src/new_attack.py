@@ -30,7 +30,7 @@ from l2_attack import CarliniL2
 from glue import BNN
 import matplotlib
 import matplotlib.pyplot as plt
-from sklearn.metrics import auc
+from sklearn.metrics import auc, accuracy_score
 
 def show(img):
     remap = "  .*#"+"#"*100
@@ -396,72 +396,72 @@ def eval_model(model, clean_x, clean_y, adv):
     return adv_acc, dist, (clean_unc, adv_unc)
 
 def run_attacks():
-    datasets = ["MNIST", "CIFAR10"]
+    datasets = ["CIFAR10", "MNIST"]
     inf_methods = ["ADVI", "NUTS"]#, "HMC", "MCDROP"]
     colors = ["gray", "white"]
     confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
-    for dataset, inf in zip(datasets, inf_methods):
-        global ISMNIST
-        if dataset == "MNIST":
-            ISMNIST = True
-            data = MNIST()
-        else:
-            ISMNIST = False
-            data = CIFAR()
-        #standardize naming of pkls between comps in some way
-        path = "pkls/" + dataset + "-" + inf + ".zip"
-        try:
-            print(path)
-            print(ISMNIST)
-            model = BNN(path)
-        except(FileNotFoundError):
-            pass
-        clean_x = data.test_data[:20]
-        clean_y = data.test_labels[:20]
-        g_results = [[],[],[]]
-        w_results = [[],[],[]]
-        for conf in confs:
-            adv_gray_box = gray_box(clean_x, clean_y, conf, model)
-            adv_white_box = white_box(clean_x, clean_y, conf, model)
-            g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
-            w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
-            g_results[0].append(g_adv_acc)
-            g_results[1].append(g_dist)
-            g_results[2].append(g_uncs)
-            w_results[0].append(w_adv_acc)
-            w_results[1].append(w_dist)
-            w_results[2].append(w_uncs)
-            #visualize adv examples
-            adv_ex_g = adv_gray_box[0]
-            adv_ex_w = adv_white_box[0]
+    for dataset in datasets:
+        for inf in inf_methods:
+            global ISMNIST
             if dataset == "MNIST":
-                plt.gray()
-                adv_ex_g = adv_ex_g.reshape([28,28])
-                adv_ex_w = adv_ex_w.reshape([28,28])
+                ISMNIST = True
+                data = MNIST()
             else:
-                #cifar10 images subtracted .5 in setup_cifar
-                #reshape(32,32,3)?
-                adv_ex_g += 0.5
-                adv_ex_w += 0.5
-            plt.imshow(adv_ex_g)
-            # plt.show()
-            plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_gray_adv_visualization.png")
-            plt.imshow(adv_ex_w)
-            plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_white_adv_visualization.png")
-            np.save(create_filename(dataset, inf, "gray", "adv_accs"), np.array(g_results[0]))
-            np.save(create_filename(dataset, inf, "gray", "dists"), np.array(g_results[1]))
-            np.save(create_filename(dataset, inf, "gray", "uncs"), np.array(g_results[2]))
-            np.save(create_filename(dataset, inf, "white", "adv_accs"), np.array(w_results[0]))
-            np.save(create_filename(dataset, inf, "white", "dists"), np.array(w_results[1]))
-            np.save(create_filename(dataset, inf, "white", "uncs"), np.array(w_results[2]))
-            # np.save(create_filename(dataset, inf, "white", "results"), np.array(w_results))
-        for i in range(len(confs)):
-            print("datatset: {}, inf_method: {}, threat: gray, conf: {}".format(dataset, inf, confs[i]))
-            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(g_results[0][i], g_results[1][i], 
-                    np.mean(g_results[2][i][0]), np.mean(g_results[2][i][1])))
-            print("datatset: {}, inf_method: {}, threat: white, conf: {}".format(dataset, inf, confs[i]))
-            print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(w_results[0][i], w_results[1][i], 
-                    np.mean(w_results[2][i][0]), np.mean(w_results[2][i][1])))
+                ISMNIST = False
+                data = CIFAR()
+            #standardize naming of pkls between comps in some way
+            path = "pkls/" + dataset + "-" + inf + ".pkl"
+            try:
+                # print(path)
+                model = BNN(path, ISMNIST=ISMNIST)
+            except(FileNotFoundError):
+                pass
+            clean_x = data.test_data[:20]
+            clean_y = data.test_labels[:20]
+            g_results = [[],[],[]]
+            w_results = [[],[],[]]
+            for conf in confs:
+                adv_gray_box = gray_box(clean_x, clean_y, conf, model)
+                adv_white_box = white_box(clean_x, clean_y, conf, model)
+                g_adv_acc, g_dist, g_uncs = eval_model(model,clean_x,clean_y, adv_gray_box)
+                w_adv_acc, w_dist, w_uncs = eval_model(model,clean_x,clean_y, adv_white_box)
+                g_results[0].append(g_adv_acc)
+                g_results[1].append(g_dist)
+                g_results[2].append(g_uncs)
+                w_results[0].append(w_adv_acc)
+                w_results[1].append(w_dist)
+                w_results[2].append(w_uncs)
+                #visualize adv examples
+                adv_ex_g = adv_gray_box[0]
+                adv_ex_w = adv_white_box[0]
+                if dataset == "MNIST":
+                    plt.gray()
+                    adv_ex_g = adv_ex_g.reshape([28,28])
+                    adv_ex_w = adv_ex_w.reshape([28,28])
+                else:
+                    #cifar10 images subtracted .5 in setup_cifar
+                    #reshape(32,32,3)?
+                    adv_ex_g += 0.5
+                    adv_ex_w += 0.5
+                plt.imshow(adv_ex_g)
+                # plt.show()
+                plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_gray_adv_visualization.png")
+                plt.imshow(adv_ex_w)
+                plt.savefig("adv_vis/" + dataset + "_" + inf + "_" + (str)(conf) + "_white_adv_visualization.png")
+                np.save(create_filename(dataset, inf, "gray", "adv_accs"), np.array(g_results[0]))
+                np.save(create_filename(dataset, inf, "gray", "dists"), np.array(g_results[1]))
+                np.save(create_filename(dataset, inf, "gray", "uncs"), np.array(g_results[2]))
+                np.save(create_filename(dataset, inf, "white", "adv_accs"), np.array(w_results[0]))
+                np.save(create_filename(dataset, inf, "white", "dists"), np.array(w_results[1]))
+                np.save(create_filename(dataset, inf, "white", "uncs"), np.array(w_results[2]))
+                # np.save(create_filename(dataset, inf, "white", "results"), np.array(w_results))
+            for i in range(len(confs)):
+                print("datatset: {}, inf_method: {}, threat: gray, conf: {}".format(dataset, inf, confs[i]))
+                print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(g_results[0][i], g_results[1][i], 
+                        np.mean(g_results[2][i][0]), np.mean(g_results[2][i][1])))
+                print("datatset: {}, inf_method: {}, threat: white, conf: {}".format(dataset, inf, confs[i]))
+                print("Adv. Acc: {}, Distortion: {}, Mean Clean Unc: {}, Mean Adv Unc: {}".format(w_results[0][i], w_results[1][i], 
+                        np.mean(w_results[2][i][0]), np.mean(w_results[2][i][1])))
 
 # confs = [0,1,2,3,4,5,6,7,8,9,10,20,50] 
 def run_mc_drop():
@@ -785,3 +785,13 @@ if __name__ == "__main__":
     #TODO: if still want change so you pass in the path
     run_attacks()
     # run_mc_drop()
+
+    # model = BNN("pkls/MNIST-ADVI.pkl")
+    # data = MNIST()
+    # xtest = data.test_data
+    # ytest = data.test_labels
+    # preds = model.predict(xtest)
+    # print(np.mean(np.argmax(preds,axis=1) == np.argmax(ytest,axis=1)))
+    # print(accuracy_score(ytest,preds))
+
+

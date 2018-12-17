@@ -609,7 +609,10 @@ def mc_drop_eval_model(model, clean_x, clean_y, adv):
     #       np.mean(clean_unc), np.mean(adv_unc))
     return adv_acc, dist, (clean_unc, adv_unc)
 
-def plot_results(path):
+def plot_results(dataset, inf, color):
+    path = "results/{}_{}_{}".format(dataset, inf, color)
+    title_desc = "{} {} {}box".format(dataset, inf, color)
+    filename = "plots/{}_{}_{}".format(dataset, inf, color)
     aucs = []
     max_auc = 0
     plot_TPRs = []
@@ -617,32 +620,39 @@ def plot_results(path):
     uncs_path = path + "_uncs.npy"
     dists_uncs = np.load(uncs_path)
     for uncs in dists_uncs:
-        auc, TPRs, FPRs = roc_auc(uncs[0], uncs[1])
-        if auc > max_auc:
-            max_auc = auc
+        auc_val, TPRs, FPRs = roc_auc(uncs[0], uncs[1])
+        if auc_val > max_auc:
+            max_auc = auc_val
             plot_TPRs = TPRs
             plot_FPRs = FPRs
-        aucs.append(auc)
+        aucs.append(auc_val)
     plt.plot(plot_FPRs + [1.0], plot_TPRs + [1.0])
-    plt.title("ROC Curve")
+    plt.title("ROC Curve for {}".format(title_desc))
     plt.xlabel("FPR")
     plt.ylabel("TPR")
+    plt.savefig("{}_ROC.png".format(filename))
     plt.show()
 
     dists_path = path + "_dists.npy"
     dists = np.load(dists_path)
-    plt.plot(dists, aucs)
-    plt.title("AUC vs Distortion")
+    zipped = sorted(zip(dists, aucs))
+    plot_1_xy = ([a for a,b in zipped], [b for a,b in zipped])
+    plt.plot(plot_1_xy[0], plot_1_xy[1])
+    plt.title("AUC vs Distortion for {}".format(title_desc))
     plt.xlabel("Distortion")
     plt.ylabel("AUC Value")
+    plt.savefig("{}_AUC_vs_dist.png".format(filename))
     plt.show()
 
     adv_accs_path = path + "_adv_accs.npy"
     adv_accs = np.load(adv_accs_path)
-    plt.plot(dists, adv_accs)
-    plt.title("Adversarial Accuracy vs Distortion")
+    zipped = sorted(zip(dists, adv_accs))
+    plot_1_xy = ([a for a,b in zipped], [b for a,b in zipped])
+    plt.plot(plot_1_xy[0], plot_1_xy[1])
+    plt.title("Adversarial Accuracy vs Distortion for {}".format(title_desc))
     plt.xlabel("Distortion")
     plt.ylabel("Adv Accuracy")
+    plt.savefig("{}_adv_acc_vs_dist.png".format(filename))
     plt.show()
 
     #All adv accuracies on same graph for each model + inf vs dist
@@ -785,13 +795,3 @@ if __name__ == "__main__":
     #TODO: if still want change so you pass in the path
     run_attacks()
     # run_mc_drop()
-
-    # model = BNN("pkls/MNIST-ADVI.pkl")
-    # data = MNIST()
-    # xtest = data.test_data
-    # ytest = data.test_labels
-    # preds = model.predict(xtest)
-    # print(np.mean(np.argmax(preds,axis=1) == np.argmax(ytest,axis=1)))
-    # print(accuracy_score(ytest,preds))
-
-

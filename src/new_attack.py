@@ -352,8 +352,8 @@ def gray_box(clean_x, clean_y, confidence, model):
     # print(type(single_model))
     # print(type(model.model))
     sess = keras.backend.get_session()
-    attack = CarliniL2(sess, Wrap(single_model), batch_size=20, max_iterations=1000,#1000
-                       binary_search_steps=3, learning_rate=1e-1, initial_const=1,
+    attack = CarliniL2(sess, Wrap(single_model), batch_size=20, max_iterations=10000,#1000
+                       binary_search_steps=9, learning_rate=1e-2, initial_const=1e-3,
                        targeted=False, confidence=confidence, abort_early=True)
     adv = attack.attack(clean_x, clean_y)
     return adv
@@ -366,9 +366,9 @@ def white_box(clean_x, clean_y, confidence, model):
         models.append(all_models[i])
     # models = np.random.choice(all_models, size=20, replace=False)
     sess = keras.backend.get_session()
-    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=20, binary_search_steps=4,
-                           initial_const=1, max_iterations=1000, confidence=confidence, #1000 iters
-                           targeted=False, abort_early=True, learning_rate=1e-1)
+    attack = CarliniL2Multiple(sess, [Wrap(m) for m in models], batch_size=20, binary_search_steps=9,
+                           initial_const=1e-3, max_iterations=10000, confidence=confidence, #1000 iters
+                           targeted=False, abort_early=True, learning_rate=1e-2)
     adv = attack.attack(clean_x, clean_y)
     return adv
 
@@ -399,7 +399,7 @@ def run_attacks():
     datasets = ["CIFAR10", "MNIST"]
     inf_methods = ["ADVI", "NUTS"]#, "HMC", "MCDROP"]
     colors = ["gray", "white"]
-    confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
+    confs = [0,0.25,0.5,1,2,4,8,12,16,24,32,48,64]
     for dataset in datasets:
         for inf in inf_methods:
             global ISMNIST
@@ -471,7 +471,7 @@ def run_mc_drop():
     model = make_model(CIFARModel, dropout=True)
     model.load_weights("models/MCDrop-cifar")
     data = CIFAR()
-    confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
+    confs = [0,0.25,0.5,1,2,4,8,12,16,24,32,48,64]
     clean_x = data.test_data[:20]
     clean_y = data.test_labels[:20]
     g_results = [[],[],[]]
@@ -797,3 +797,62 @@ if __name__ == "__main__":
     #TODO: if still want change so you pass in the path
     run_attacks()
     # run_mc_drop()
+
+    # datasets = ["CIFAR10", "MNIST"]
+    # inf_methods = ["ADVI", "NUTS", "MCDROP"]
+    # colors = ["gray", "white"]
+    # confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
+    # for dataset in datasets:
+    #     for color in colors:    
+    #         for inf in inf_methods:
+    #             linestyle = '-' if color == "gray" else '--'
+    #             if inf == "ADVI":
+    #                 c = "red"
+    #             elif inf == "NUTS":
+    #                 c = "blue"
+    #             else:
+    #                 c = "green"
+    #             path = "results/{}_{}_{}".format(dataset, inf, color)
+    #             title_desc = "{} {} {}box".format(dataset, inf, color)
+    #             filename = "plots/{}_{}_{}".format(dataset, inf, color)
+    #             aucs = []
+    #             max_auc = 0
+    #             plot_TPRs = []
+    #             plot_FPRs = []
+    #             uncs_path = path + "_uncs.npy"
+    #             dists_uncs = np.load(uncs_path)
+    #             for uncs in dists_uncs:
+    #                 auc_val, TPRs, FPRs = roc_auc(uncs[0], uncs[1])
+    #                 if auc_val > max_auc:
+    #                     max_auc = auc_val
+    #                     plot_TPRs = TPRs
+    #                     plot_FPRs = FPRs
+    #                 aucs.append(auc_val)
+    #             # plt.plot(plot_FPRs + [1.0], plot_TPRs + [1.0], label = title_desc + " = {:.2f}".format(max_auc), color = c, linestyle = linestyle)
+    #             # plt.title("ROC Curves")
+    #             # plt.xlabel("FPR")
+    #             # plt.ylabel("TPR")
+
+
+    #             # dists_path = path + "_dists.npy"
+    #             # dists = np.load(dists_path)
+    #             # zipped = sorted(zip(dists, aucs))
+
+    #             # plot_1_xy = ([a for a,b in zipped], [b for a,b in zipped])
+    #             # plt.plot(confs, aucs, label = title_desc, color = c, linestyle = linestyle)
+    #             # plt.title("AUC vs Confidence".format(title_desc))
+    #             # plt.xlabel("Confidence")
+    #             # plt.ylabel("AUC Value")
+
+
+    #             adv_accs_path = path + "_adv_accs.npy"
+    #             adv_accs = np.load(adv_accs_path)
+    #             # zipped = sorted(zip(dists, adv_accs))
+    #             # plot_1_xy = ([a for a,b in zipped], [b for a,b in zipped])
+    #             # plt.plot(plot_1_xy[0], plot_1_xy[1], label = title_desc, color = c, linestyle = linestyle)
+    #             plt.plot(confs, adv_accs, label = title_desc, color = c, linestyle = linestyle)
+    #             plt.title("Adversarial Accuracy vs Confidence")
+    #             plt.xlabel("Confidence")
+    #             plt.ylabel("Adv Accuracy")
+    #     plt.legend()
+    #     plt.show()

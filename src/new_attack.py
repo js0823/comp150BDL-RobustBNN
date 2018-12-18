@@ -466,21 +466,21 @@ def run_attacks():
 # confs = [0,1,2,3,4,5,6,7,8,9,10,20,50] 
 def run_mc_drop():
     global ISMNIST
-    ISMNIST = True
+    ISMNIST = False
     keras.backend.set_learning_phase(False)
-    model = make_model(MNISTModel, dropout=True)
-    model.load_weights("models/MCDrop-mnist")
-    data = MNIST()
-    confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10,20,50]
+    model = make_model(CIFARModel, dropout=True)
+    model.load_weights("models/MCDrop-cifar")
+    data = CIFAR()
+    confs = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,2,3,4,5,6,7,8,9,10]
     clean_x = data.test_data[:20]
     clean_y = data.test_labels[:20]
     g_results = [[],[],[]]
     w_results = [[],[],[]]
     for conf in confs:
-        adv_gray_box = mc_drop_gray_box(clean_x, clean_y, conf, MNISTModel)
-        adv_white_box = mc_drop_white_box(clean_x, clean_y, conf, MNISTModel)
-        g_adv_acc, g_dist, g_uncs = mc_drop_eval_model(MNISTModel,clean_x,clean_y, adv_gray_box)
-        w_adv_acc, w_dist, w_uncs = mc_drop_eval_model(MNISTModel,clean_x,clean_y, adv_white_box)
+        adv_gray_box = mc_drop_gray_box(clean_x, clean_y, conf, CIFARModel)
+        adv_white_box = mc_drop_white_box(clean_x, clean_y, conf, CIFARModel)
+        g_adv_acc, g_dist, g_uncs = mc_drop_eval_model(CIFARModel,clean_x,clean_y, adv_gray_box)
+        w_adv_acc, w_dist, w_uncs = mc_drop_eval_model(CIFARModel,clean_x,clean_y, adv_white_box)
         g_results[0].append(g_adv_acc)
         g_results[1].append(g_dist)
         g_results[2].append(g_uncs)
@@ -490,7 +490,7 @@ def run_mc_drop():
         #visualize adv examples
         adv_ex_g = adv_gray_box[0]
         adv_ex_w = adv_white_box[0]
-        dataset = "MNIST"
+        dataset = "CIFAR"
         inf = "MCDROP"
         if dataset == "MNIST":
             plt.gray()
@@ -499,6 +499,8 @@ def run_mc_drop():
         else:
             #cifar10 images subtracted .5 in setup_cifar
             #reshape(32,32,3)?
+            # adv_ex_g = adv_ex_g.reshape([32,32])
+            # adv_ex_w = adv_ex_w.reshape([32,32])
             adv_ex_g += 0.5
             adv_ex_w += 0.5
         plt.imshow(adv_ex_g)
@@ -557,7 +559,7 @@ def mc_drop_gray_box(clean_x, clean_y, confidence, model):
     #hyperparams = init_hp...
     # model = Model.create_model()
     single_model = make_model(model, dropout=True)
-    single_model.load_weights("models/MCDrop-mnist")    # print(type(single_model))
+    single_model.load_weights("models/MCDrop-cifar")    # print(type(single_model))
     # print(type(model.model))
     sess = keras.backend.get_session()
     attack = CarliniL2(sess, Wrap(single_model), batch_size=20, max_iterations=1000,#1000
@@ -570,7 +572,7 @@ def mc_drop_white_box(clean_x, clean_y, confidence, model):
     models = []
     for _ in range(20):
         m = make_model(model, dropout=True, fixed=True)
-        m.load_weights("models/MCDrop-mnist")
+        m.load_weights("models/MCDrop-cifar")
         models.append(m)
     # models = np.random.choice(all_models, size=20, replace=False)
     sess = keras.backend.get_session()
@@ -585,7 +587,7 @@ def mc_drop_eval_model(model, clean_x, clean_y, adv):
     models = []
     for _ in range(20):
         m = make_model(model, dropout=True, fixed=True)
-        m.load_weights("models/MCDrop-mnist")
+        m.load_weights("models/MCDrop-cifar")
         models.append(m)
     #bad change to avg
     model = models[0]

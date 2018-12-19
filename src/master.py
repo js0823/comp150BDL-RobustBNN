@@ -14,12 +14,12 @@ import sys
 ###################### Configurations ########################
 inference_alg = 'nuts'  # Can be advi, nuts, hmc
 modeltype = 'bnn' # can be bnn or bcnn
-data = 'CIFAR10' # can be MNIST or CIFAR10
+data = 'MNIST' # can be MNIST or CIFAR10
 h_layer_size = 100
 mean = 0
 var = 1
 nPosterior_samples = 200
-test_trace = True # Setting this true will test the picked file only
+test_trace = False # Setting this true will test the picked file only
 trace_save_filename = 'advi-bnn-MNIST.zip'
 ##############################################################
 

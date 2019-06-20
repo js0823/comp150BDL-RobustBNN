@@ -1,4 +1,4 @@
-# comp150BDL-RobustBNN
+RobustBNN
 RobustBNN Team Repository
 
 MNIST using carlini code from git
